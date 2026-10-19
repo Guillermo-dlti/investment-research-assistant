@@ -6,6 +6,13 @@ __pycache__/
 # C extensions
 *.so
 
+# C++ compiled files
+*.o
+*.obj
+*.a
+*.dylib
+*.out
+
 # Distribution / packaging
 .Python
 build/
@@ -152,7 +159,7 @@ activemq-data/
 # Environments
 .env
 .envrc
-.venv
+.venv/
 env/
 venv/
 ENV/
@@ -218,6 +225,13 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# CMake build files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+cmake-build-*/
 
 # macOS system files
 .DS_Store
