@@ -1,4 +1,4 @@
-# C++ Trie and Inverted Index
+# C++ Algorithms and Data Structures
 
 This directory contains custom C++17 data structures for the normalized financial corpus: a Trie for vocabulary lookup and an inverted index for chunk retrieval.
 
@@ -14,6 +14,9 @@ This directory contains custom C++17 data structures for the normalized financia
 - `tests/inverted_index_tests.cpp`: eleven portable tests and one local real-collection integration test.
 - `json_reader.h` and `json_reader.cpp`: the shared standard-library-only JSON reader used by both loaders.
 - `python_bindings.cpp`: pybind11 definitions for the existing Trie, inverted index, metadata, rankings, and C++ file loaders.
+- `kmp.h` and `kmp.cpp`: LPS construction, exact KMP search, and match counting.
+- `kmp_demo.cpp`: synthetic and real normalized-chunk matching examples.
+- `tests/kmp_tests.cpp`: fifteen portable KMP test cases.
 
 No external Trie or JSON library is used. Nodes own their children with `std::unique_ptr`, and each node uses `std::map<unsigned char, ...>` so traversal is deterministic and bytewise lexicographic.
 
@@ -26,6 +29,7 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel
 ./build/trie_demo data/metadata/vocabulary.json
 ./build/inverted_index_demo data/processed/preprocessed_collection.json
+./build/kmp_demo data/processed/preprocessed_collection.json
 PYTHONPATH=build/python python -m src.python.search_demo
 ctest --test-dir build --output-on-failure
 ```
@@ -79,4 +83,12 @@ Python strings are encoded as UTF-8 by pybind11 and remain subject to the C++ co
 
 Interop converts Python strings and token lists into C++ values and copies C++ result vectors back into Python objects. For input size `I` and returned data size `O`, this adds approximately `O(I + O)` conversion work and corresponding temporary allocations. It does not change Trie lookup, postings intersection/union, or ranking complexity. Fine-grained calls can incur noticeable fixed interpreter-boundary overhead even when the C++ operation is small.
 
-The extension has no stable binary compatibility across unrelated Python versions; rebuild it with the exact interpreter that will import it. The verified environment used Python 3.14.7 with pybind11 3.1.0 and Apple Clang 21. No KMP, Z-function, approximate matching, AI integration, or frontend is part of the module.
+The extension has no stable binary compatibility across unrelated Python versions; rebuild it with the exact interpreter that will import it. The verified environment used Python 3.14.7 with pybind11 3.1.0 and Apple Clang 21. KMP remains a standalone C++ target and is not part of the module; Z-function, approximate matching, AI integration, and the frontend are also absent.
+
+## KMP Exact Matching
+
+`computeLps(pattern)` records, for each pattern byte, the length of the longest proper prefix that is also a suffix. On mismatch, `kmpSearch(text, pattern)` uses this table to retain known prefix information instead of moving the text cursor backward. `kmpCount` uses the same scan without storing positions. Overlapping matches are retained by falling back through the LPS table after every match.
+
+Matching is byte-oriented. Valid UTF-8, currency symbols, percentages, punctuation, and hyphenated text are preserved, but returned positions are byte offsets and C++ performs no normalization. Empty patterns intentionally return no positions and count zero.
+
+For `n` text bytes and `m` pattern bytes, LPS construction takes `O(m)` time and search takes `O(n)` time, for `O(n + m)` total. Auxiliary space is `O(m)` for LPS, plus `O(z)` output space for `z` returned positions. The demo found `artificial intelligence` in the real normalized token stream for `NVDA_2024_10K_0009` at byte offset 461.

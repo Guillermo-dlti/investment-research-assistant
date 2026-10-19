@@ -35,10 +35,14 @@ add_library(inverted_index_core
 target_include_directories(inverted_index_core PUBLIC src/cpp)
 target_link_libraries(inverted_index_core PUBLIC json_support)
 
+add_library(kmp_core src/cpp/kmp.cpp)
+target_include_directories(kmp_core PUBLIC src/cpp)
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
     target_compile_options(json_support PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(trie_core PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(inverted_index_core PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(kmp_core PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
 add_executable(trie_demo src/cpp/trie_demo.cpp)
@@ -46,6 +50,9 @@ target_link_libraries(trie_demo PRIVATE trie_core)
 
 add_executable(inverted_index_demo src/cpp/inverted_index_demo.cpp)
 target_link_libraries(inverted_index_demo PRIVATE inverted_index_core)
+
+add_executable(kmp_demo src/cpp/kmp_demo.cpp)
+target_link_libraries(kmp_demo PRIVATE kmp_core inverted_index_core)
 
 pybind11_add_module(investment_engine MODULE src/cpp/python_bindings.cpp)
 target_link_libraries(investment_engine PRIVATE trie_core inverted_index_core)
@@ -62,6 +69,9 @@ target_link_libraries(trie_tests PRIVATE trie_core)
 
 add_executable(inverted_index_tests src/cpp/tests/inverted_index_tests.cpp)
 target_link_libraries(inverted_index_tests PRIVATE inverted_index_core)
+
+add_executable(kmp_tests src/cpp/tests/kmp_tests.cpp)
+target_link_libraries(kmp_tests PRIVATE kmp_core)
 
 set(SYNTHETIC_TRIE_TESTS
     insert_and_search
@@ -106,6 +116,29 @@ else()
         "Generated vocabulary not found; local-vocabulary CTests will not be registered"
     )
 endif()
+
+set(KMP_TESTS
+    basic
+    no_match
+    multiple
+    overlapping
+    beginning
+    end
+    full_text
+    longer_pattern
+    empty_pattern
+    empty_text
+    repeated_prefix
+    punctuation
+    utf8
+    lps_correctness
+    byte_offsets
+)
+
+foreach(TEST_NAME IN LISTS KMP_TESTS)
+    add_test(NAME "kmp_${TEST_NAME}" COMMAND kmp_tests "${TEST_NAME}")
+    set_tests_properties("kmp_${TEST_NAME}" PROPERTIES LABELS "portable;kmp")
+endforeach()
 
 set(SYNTHETIC_INVERTED_INDEX_TESTS
     single_token_lookup

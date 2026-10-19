@@ -33,9 +33,9 @@ Financial reports will be collected and converted into clean text. The text will
 
 ## Current Status
 
-**Stage 2 — Text Preprocessing and Indexing: Complete through Step 13**
+**Stage 3 — Exact String Matching: Step 14 complete**
 
-The ten selected SEC filings have been downloaded, extracted, chunked, consolidated, preprocessed, indexed, and validated end to end. The C++17 Trie and chunk-level inverted index can be used directly from Python through pybind11. See `reports/stage2_validation.md` for the final Stage 2 results. Additional matching and similarity algorithms, AI integration, and the user interface have not yet been implemented.
+Stage 2 is complete and validated. Stage 3 now includes a standalone C++17 Knuth-Morris-Pratt implementation for exact byte-string matching. KMP is not exposed through Python yet; Z-function, approximate and similarity matching, AI integration, and the user interface remain unimplemented.
 
 ## Development Setup
 
@@ -247,6 +247,25 @@ PYTHONPATH=build/python python -m pytest tests -q
 Direct binding calls expect normalized tokens. The `SearchEngine` wrapper accepts ordinary user query strings and applies the existing Python preprocessing rules before calling C++. Autocomplete normalizes case, Unicode punctuation, and whitespace but intentionally keeps the supplied text as a prefix instead of tokenizing it as a complete term.
 
 The build discovers pybind11 through the selected Python interpreter using `python -m pybind11 --cmakedir`; no system-wide installation or hardcoded package path is used. Python 3.14.7, pybind11 3.1.0, CMake 4.4.4, and Apple Clang 21 were verified. Python/UTF-8 string conversion and conversion of vectors, dictionaries, and ranked results add boundary overhead proportional to the transferred input and output sizes, but do not change the underlying algorithms' theoretical complexity.
+
+## Knuth-Morris-Pratt Exact Matching
+
+The custom C++17 KMP implementation builds an LPS (longest proper prefix that is also a suffix) table and uses it to find every exact occurrence without restarting at the beginning of the pattern after a mismatch. It supports overlapping matches and returns ascending, zero-based byte offsets. An empty pattern, empty text with a nonempty pattern, or a pattern longer than the text produces no matches; an empty pattern has count zero.
+
+KMP treats `std::string` values as UTF-8 bytes, consistent with the Trie. It performs no case folding or Unicode normalization, so callers must provide the exact representation they want to match. Positions are byte offsets rather than Unicode character indices.
+
+Build, run the demonstration, and execute tests:
+
+```bash
+cmake -S . -B build \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DPython_EXECUTABLE="$PWD/.venv/bin/python"
+cmake --build build --parallel
+./build/kmp_demo data/processed/preprocessed_collection.json
+ctest --test-dir build --output-on-failure
+```
+
+For text length `n` bytes and pattern length `m` bytes, LPS construction is `O(m)`, searching is `O(n)`, and the combined operation is `O(n + m)`. The LPS table requires `O(m)` auxiliary space; the returned positions require `O(z)` output space for `z` matches. KMP has not been added to `investment_engine` and is not used for ranking.
 
 ## Disclaimer
 
