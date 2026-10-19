@@ -6,7 +6,7 @@ Advanced Algorithms course project (Tec de Monterrey). You ask a question, the s
 
 - **Language / Runtime**: Python 3.11+ (3.14.7 verified) and C++17 (Apple Clang)
 - **Framework**: pybind11 module `investment_engine`, built with CMake into `build/python/`
-- **Key dependencies**: pymupdf, beautifulsoup4, pybind11, matplotlib, pytest (Streamlit and Hugging Face planned, not installed)
+- **Key dependencies**: pymupdf, beautifulsoup4, pybind11, matplotlib, pytest, torch and transformers (Stage 5 model `Qwen/Qwen2.5-3B-Instruct`, about 6 GB, downloaded on first answer); a GUI library is still to be chosen
 - **Package manager**: pip inside `.venv`
 
 ## Build approach
@@ -28,13 +28,15 @@ python src/python/preprocess_text.py --input data/chunks/collection.json --outpu
 # Build (configure AFTER data exists, so data tests register)
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DPython_EXECUTABLE="$PWD/.venv/bin/python" && cmake --build build --parallel
 
-# Test (expect 92 C++ and 109 Python passing with data present)
+# Test (expect 101 C++ and 123 Python passing with data present; Python tests use a fake model)
 ctest --test-dir build --output-on-failure && PYTHONPATH=build/python python -m pytest tests -q
 
 # Demos
 PYTHONPATH=build/python python -m src.python.exact_search_demo
 PYTHONPATH=build/python python -m src.python.search_demo
 PYTHONPATH=build/python python -m src.python.approximate_search_demo  # exact vs approximate, Stage 4 evidence
+PYTHONPATH=build/python python -m src.python.ask "What was NVIDIA data center revenue in fiscal 2025?"
+PYTHONPATH=build/python python -m src.python.run_questions  # 21 questions → reports/stage5_results.{json,md}
 ```
 
 ## Specs

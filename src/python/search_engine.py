@@ -329,19 +329,9 @@ class SearchEngine:
             }
 
         start = time.perf_counter()
-        mode = "and"
-        ranked = self.ranked_and_search(query)
-        if not ranked:
-            mode = "or"
-            ranked = self.ranked_or_search(query)
-        if not ranked:
-            mode = "none"
-        exact_matches = [
-            {**result, "algorithm": "term_frequency"}
-            for result in ranked
-            if self._passes_filters(result, ticker, fiscal_year)
-        ]
-        exact_results = exact_matches if top_k is None else exact_matches[:top_k]
+        exact_results, mode, exact_count = self._exact_ranked(
+            query, ticker, fiscal_year, top_k
+        )
         exact_time = (time.perf_counter() - start) * 1000
 
         start = time.perf_counter()
@@ -361,7 +351,7 @@ class SearchEngine:
             "exact": {
                 "mode": mode,
                 "results": exact_results,
-                "candidate_count": len(exact_matches),
+                "candidate_count": exact_count,
                 "time_ms": exact_time,
             },
             "approximate": {
@@ -372,6 +362,46 @@ class SearchEngine:
             },
             "shared_chunk_ids": sorted(shared),
         }
+
+    def exact_ranked_search(
+        self,
+        query: str,
+        *,
+        ticker: str | None = None,
+        fiscal_year: int | None = None,
+        top_k: int | None = 10,
+    ) -> tuple[list[dict[str, Any]], str, int]:
+        """Return the exact side of ``compare_search`` on its own.
+
+        Ranked AND search, falling back to ranked OR when AND finds nothing,
+        with filters applied before ``top_k``. Returns the results, the mode
+        used (``"and"``, ``"or"`` or ``"none"``) and the match count after
+        filters.
+        """
+        self._validate_approximate_args(ticker, fiscal_year, top_k, DEFAULT_ALPHA)
+        return self._exact_ranked(query, ticker, fiscal_year, top_k)
+
+    def _exact_ranked(
+        self,
+        query: str,
+        ticker: str | None,
+        fiscal_year: int | None,
+        top_k: int | None,
+    ) -> tuple[list[dict[str, Any]], str, int]:
+        mode = "and"
+        ranked = self.ranked_and_search(query)
+        if not ranked:
+            mode = "or"
+            ranked = self.ranked_or_search(query)
+        if not ranked:
+            mode = "none"
+        matches = [
+            {**result, "algorithm": "term_frequency"}
+            for result in ranked
+            if self._passes_filters(result, ticker, fiscal_year)
+        ]
+        results = matches if top_k is None else matches[:top_k]
+        return results, mode, len(matches)
 
     def _approximate(
         self,

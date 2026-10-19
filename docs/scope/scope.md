@@ -19,9 +19,9 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | 5 | Levenshtein fuzzy term matching | Slice 1: Stage 4 | in-progress |
 | 6 | N gram Jaccard similarity | Slice 1: Stage 4 | in-progress |
 | 7 | Approximate retrieval and reranking | Slice 1: Stage 4 | in-progress |
-| 8 | Context selection | Slice 2: Stage 5 | planned |
-| 9 | Language model answers | Slice 2: Stage 5 | planned |
-| 10 | Twenty question run | Slice 2: Stage 5 | planned |
+| 8 | Context selection | Slice 2: Stage 5 | in-progress |
+| 9 | Language model answers | Slice 2: Stage 5 | in-progress |
+| 10 | Twenty question run | Slice 2: Stage 5 | in-progress |
 | 11 | Exact vs approximate comparison (Stage 6) | Slice 3: Stage 6 | planned |
 | 12 | GUI with Trie autocomplete (bonus) | Slice 4: Bonus | planned |
 | 13 | Final report | Deliverables | planned |
@@ -80,20 +80,31 @@ Spec [0003](../specs/0003-approximate-retrieval-reranking.md) · code in `src/cp
 
 ## Slice 2: Stage 5, answers from a language model
 
-### 8. Context selection
+### 8. Context selection · in-progress
 Picks which retrieved chunks go to the model: top k, a word budget, and dropping near duplicates caused by chunk overlap.
 **Done when:** for any question the selected context stays under the budget, has no duplicate chunks, and keeps `chunk_id` and filing metadata for citations.
-- [ ] Build it: `/develop context selection`
+- [x] Design it (spec): covered by spec 0004
+- [x] Build it: `/develop context selection`
+   - [x] C++ `selectContext` plus `JaccardIndex::chunkSimilarity`/`hasChunk`, with 9 CTests, a demo and bindings
+- [ ] Verify it: `/check verify context selection`
+Spec [0004](../specs/0004-context-selection-and-llm-answers.md) · code in `src/cpp/context_selection.*`
 
-### 9. Language model answers · needs a decision
+### 9. Language model answers · in-progress
 A pretrained Hugging Face model (no training) answers using only the selected context.
 **Done when:** question → search → chunks → context → model → answer runs locally and the answer cites its chunks; the model choice and why are recorded.
-- [ ] Design it (spec): `/architect language model answers`
+- [x] Design it (spec): `/architect language model answers`
+- [x] Build it: `/develop language model answers`
+   - [x] `ResearchAssistant.ask` with filter inference, numbered prompt, citations and a lazy `Qwen/Qwen2.5-3B-Instruct` generator; `ask` CLI; tests with a fake model
+- [ ] Verify it: `/check verify language model answers`
+Spec [0004](../specs/0004-context-selection-and-llm-answers.md) · code in `src/python/research_assistant.py`, `src/python/ask.py`
 
 ### 10. Twenty question run
 A script that runs at least 20 questions and saves the question, the selected chunks, the answer and the retrieval time for the report.
 **Done when:** a results file under `reports/` holds 20 or more full entries, including a few where retrieval was weak.
-- [ ] Build it: `/develop twenty question run`
+- [x] Build it: `/develop twenty question run`
+   - [x] `run_questions` over 21 questions, `reports/stage5_results.{json,md}` and `reports/stage5_notes.md`
+- [ ] Verify it: `/check verify twenty question run`
+Spec [0004](../specs/0004-context-selection-and-llm-answers.md) · code in `src/python/run_questions.py`
 
 ## Slice 3: Stage 6, comparison
 

@@ -2,6 +2,7 @@
 #include "inverted_index.h"
 #include "kmp.h"
 #include "levenshtein.h"
+#include "context_selection.h"
 #include "ngram_jaccard.h"
 #include "preprocessed_collection_loader.h"
 #include "trie.h"
@@ -198,6 +199,13 @@ PYBIND11_MODULE(investment_engine, module) {
             py::arg("chunk_ids"),
             py::arg("query_tokens")
         )
+        .def(
+            "chunk_similarity",
+            &JaccardIndex::chunkSimilarity,
+            py::arg("first_id"),
+            py::arg("second_id")
+        )
+        .def("has_chunk", &JaccardIndex::hasChunk, py::arg("chunk_id"))
         .def_property_readonly("chunk_count", &JaccardIndex::chunkCount)
         .def_property_readonly("min_n", &JaccardIndex::minN)
         .def_property_readonly("max_n", &JaccardIndex::maxN);
@@ -236,6 +244,45 @@ PYBIND11_MODULE(investment_engine, module) {
         py::arg("alpha"),
         py::arg("top_k") = py::none(),
         "Rerank candidates by alpha * weighted coverage + (1 - alpha) * Jaccard / J_max."
+    );
+    py::class_<ContextCandidate>(module, "ContextCandidate")
+        .def(
+            py::init<std::string, double, std::size_t>(),
+            py::arg("chunk_id"),
+            py::arg("score"),
+            py::arg("word_count")
+        )
+        .def_readwrite("chunk_id", &ContextCandidate::chunk_id)
+        .def_readwrite("score", &ContextCandidate::score)
+        .def_readwrite("word_count", &ContextCandidate::word_count);
+
+    py::class_<ContextDecision>(module, "ContextDecision")
+        .def_readonly("chunk_id", &ContextDecision::chunk_id)
+        .def_readonly("rank", &ContextDecision::rank)
+        .def_readonly("score", &ContextDecision::score)
+        .def_readonly("word_count", &ContextDecision::word_count)
+        .def_readonly("status", &ContextDecision::status)
+        .def_readonly("redundant_with", &ContextDecision::redundant_with)
+        .def_readonly("max_similarity", &ContextDecision::max_similarity)
+        .def("__repr__", [](const ContextDecision& decision) {
+            return "ContextDecision(chunk_id='" + decision.chunk_id +
+                   "', status='" + decision.status + "')";
+        });
+
+    py::class_<ContextSelection>(module, "ContextSelection")
+        .def_readonly("decisions", &ContextSelection::decisions)
+        .def_readonly("selected_ids", &ContextSelection::selected_ids)
+        .def_readonly("total_words", &ContextSelection::total_words);
+
+    module.def(
+        "select_context",
+        &selectContext,
+        py::arg("jaccard_index"),
+        py::arg("candidates"),
+        py::arg("max_chunks"),
+        py::arg("word_budget"),
+        py::arg("redundancy_threshold"),
+        "Greedy context selection under a chunk limit, a word budget and a Jaccard redundancy threshold."
     );
     module.def(
         "load_trie",

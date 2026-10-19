@@ -53,6 +53,15 @@ public:
         const std::vector<std::string>& query_tokens
     ) const;
 
+    // Jaccard of two stored chunks' n-gram sets. Throws std::invalid_argument
+    // for an unknown ID.
+    [[nodiscard]] double chunkSimilarity(
+        const std::string& first_id,
+        const std::string& second_id
+    ) const;
+
+    [[nodiscard]] bool hasChunk(const std::string& chunk_id) const;
+
     [[nodiscard]] std::size_t chunkCount() const;
     [[nodiscard]] std::size_t minN() const;
     [[nodiscard]] std::size_t maxN() const;

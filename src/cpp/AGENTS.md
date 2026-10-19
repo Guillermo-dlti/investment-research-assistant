@@ -14,6 +14,7 @@ From scratch C++17 implementations of every algorithm the course grades: Trie, i
 | `levenshtein.h/.cpp` | Edit distance, bounded distance, `FuzzyMatcher` (closest vocabulary words; spec 0001) |
 | `ngram_jaccard.h/.cpp` | Character and word n grams, Jaccard, `JaccardIndex` (full scan `rank`, per chunk `scoreChunks`; spec 0002) |
 | `approximate_rerank.h/.cpp` | `rerankCandidates`: weighted coverage plus Jaccard scaled by the best candidate (spec 0003) |
+| `context_selection.h/.cpp` | `selectContext`: greedy chunk limit, word budget and Jaccard redundancy filter for the model context (spec 0004) |
 | `json_reader.h/.cpp` | Small standard library JSON reader shared by all loaders |
 | `vocabulary_loader.*`, `preprocessed_collection_loader.*` | Load and validate the generated JSON files |
 | `python_bindings.cpp` | The whole pybind11 surface of `investment_engine` |
