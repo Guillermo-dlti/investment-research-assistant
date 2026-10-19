@@ -33,9 +33,9 @@ Financial reports will be collected and converted into clean text. The text will
 
 ## Current Status
 
-**Stage 1 — Document Selection and Preparation**
+**Stage 1 — Document Selection and Preparation: Complete**
 
-The initial project structure is in place. Document processing, retrieval algorithms, AI integration, and the user interface have not yet been implemented.
+The ten selected SEC filings have been downloaded, extracted, chunked, and consolidated. Stage 2 preprocessing, retrieval algorithms, AI integration, and the user interface have not yet been implemented.
 
 ## Development Setup
 
@@ -129,6 +129,33 @@ python src/python/chunk_documents.py \
 ```
 
 Chunk JSON files are stored under `data/chunks/`. Change `--chunk-size` and `--overlap` to experiment with other valid values; overlap must be smaller than the chunk size.
+
+## Consolidated Collection
+
+Build and strictly validate the complete collection from the ten individual chunk files:
+
+```bash
+python src/python/build_collection.py
+```
+
+The command reads `config/document_manifest.json`, the document JSON files in `data/processed/`, and the individual chunk files in `data/chunks/`. It generates:
+
+- `data/chunks/collection.json`: manifest-ordered document summaries and the complete chunk array.
+- `data/metadata/collection_statistics.json`: collection and per-document statistics with counting methodology.
+
+Every consolidated chunk retains its original text, identifier, position, paragraph references, and filing metadata. The build fails if a manifest document is missing, metadata is inconsistent, chunk counts disagree, text is empty, or a chunk ID is duplicated. Output order is deterministic: manifest order followed by original chunk position.
+
+To reproduce and validate all of Stage 1 from a fresh checkout:
+
+```bash
+source .venv/bin/activate
+export SEC_CONTACT_EMAIL="your_actual_email@university.edu"
+python src/python/download_documents.py --all
+python src/python/extract_text.py --all
+python src/python/chunk_documents.py --all --chunk-size 250 --overlap 40
+python src/python/build_collection.py
+python -m pytest tests -q
+```
 
 ## Disclaimer
 
