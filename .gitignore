@@ -218,3 +218,24 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Downloaded financial reports
+data/raw/*
+!data/raw/.gitkeep
+
+# Processed documents
+data/processed/*
+!data/processed/.gitkeep
+
+# Generated JSON chunks
+data/chunks/*.json
+!data/chunks/.gitkeep
+
+# Generated metadata
+data/metadata/*
+!data/metadata/.gitkeep
