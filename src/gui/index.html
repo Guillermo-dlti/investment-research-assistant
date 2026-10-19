@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Investment Research Assistant</title>
+<style>
+  :root {
+    --bg: #f6f5f1;
+    --surface: #ffffff;
+    --surface-2: #f0eee8;
+    --text: #1c1b18;
+    --muted: #6b675e;
+    --border: #e2dfd6;
+    --accent: #1f5f4a;
+    --accent-soft: #e3efe9;
+    --accent-text: #ffffff;
+    --warn: #8a5a00;
+    --warn-soft: #fbf0d9;
+    --danger: #9b2c2c;
+    --danger-soft: #f8e3e1;
+    --info: #2d4f8a;
+    --info-soft: #e3eaf6;
+    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.05);
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141413;
+      --surface: #1d1c1a;
+      --surface-2: #262522;
+      --text: #ecebe6;
+      --muted: #a29e93;
+      --border: #34322e;
+      --accent: #5cbf9a;
+      --accent-soft: #1d3a30;
+      --accent-text: #0e1f19;
+      --warn: #e7b65a;
+      --warn-soft: #3a2f17;
+      --danger: #ec8f8f;
+      --danger-soft: #3d2222;
+      --info: #8fb2ec;
+      --info-soft: #1f2a3d;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.55 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  main { max-width: 920px; margin: 0 auto; padding: 32px 16px 64px; }
+  header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+  h1 { font-size: 24px; letter-spacing: -0.01em; margin: 0 0 4px; }
+  .subtitle { color: var(--muted); margin: 0; }
+  .status {
+    flex: none; display: inline-flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--muted); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); }
+  .dot.ready { background: var(--accent); }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; box-shadow: var(--shadow); padding: 20px;
+  }
+  .ask-card { position: relative; }
+  .field-label { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+  .input-row { display: flex; gap: 10px; }
+  .input-wrap { position: relative; flex: 1; }
+  #question {
+    width: 100%; font: inherit; font-size: 16px; color: var(--text);
+    background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; outline: none;
+  }
+  #question:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  button { font: inherit; cursor: pointer; }
+  #ask {
+    flex: none; background: var(--accent); color: var(--accent-text); border: 0;
+    border-radius: 10px; padding: 0 22px; font-weight: 600;
+  }
+  #ask:disabled { opacity: .55; cursor: progress; }
+
+  .suggestions {
+    position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 10;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.12); overflow: hidden; display: none;
+  }
+  .suggestions.open { display: block; }
+  .suggestions .head { font-size: 12px; color: var(--muted); padding: 8px 12px 4px; }
+  .suggestion {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    padding: 7px 12px; cursor: pointer;
+  }
+  .suggestion .word { font-family: var(--mono); font-size: 14px; }
+  .suggestion .word b { color: var(--accent); }
+  .suggestion .freq { font-size: 12px; color: var(--muted); }
+  .suggestion.active, .suggestion:hover { background: var(--accent-soft); }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  kbd {
+    font-family: var(--mono); font-size: 11px; border: 1px solid var(--border);
+    border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; background: var(--surface-2);
+  }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 16px; align-items: end; }
+  .control label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  select {
+    font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 10px;
+  }
+  .segmented { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .segmented button { border: 0; background: var(--bg); color: var(--muted); padding: 6px 12px; }
+  .segmented button.on { background: var(--accent); color: var(--accent-text); }
+
+  .examples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .chip {
+    border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
+    border-radius: 999px; padding: 4px 12px; font-size: 13px;
+  }
+  .chip:hover { border-color: var(--accent); }
+
+  #result { margin-top: 24px; display: none; }
+  #result.show { display: block; }
+  .section-title { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin: 28px 0 10px; }
+  .answer { font-size: 17px; line-height: 1.65; white-space: pre-wrap; }
+  .cite {
+    display: inline-block; min-width: 22px; text-align: center; font-size: 12px; font-weight: 600;
+    background: var(--accent-soft); color: var(--accent); border-radius: 6px; padding: 0 5px;
+    margin: 0 1px; cursor: pointer; vertical-align: 1px; border: 0;
+  }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 16px; font-size: 13px; color: var(--muted); }
+  .meta b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 999px; background: var(--info-soft); color: var(--info); margin-left: 4px; }
+
+  .source { margin-bottom: 12px; transition: border-color .3s, box-shadow .3s; }
+  .source.flash { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .source-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; margin-bottom: 8px; }
+  .source-num { font-weight: 700; color: var(--accent); }
+  .source-company { font-weight: 600; }
+  .source-meta { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .source-meta code { font-family: var(--mono); font-size: 12px; }
+  .source-text { font-size: 14px; color: var(--text); margin: 0; }
+  .source-actions { display: flex; gap: 14px; margin-top: 8px; font-size: 13px; }
+  .linkish { background: none; border: 0; padding: 0; color: var(--accent); }
+  a { color: var(--accent); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+  th { color: var(--muted); font-weight: 600; }
+  td code { font-family: var(--mono); font-size: 12px; }
+  .badge { font-size: 12px; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+  .badge.selected { background: var(--accent-soft); color: var(--accent); }
+  .badge.redundant { background: var(--warn-soft); color: var(--warn); }
+  .badge.over_budget { background: var(--danger-soft); color: var(--danger); }
+  .badge.limit { background: var(--surface-2); color: var(--muted); }
+  .table-wrap { overflow-x: auto; }
+
+  .loading { display: none; align-items: center; gap: 10px; color: var(--muted); margin-top: 20px; }
+  .loading.show { display: flex; }
+  .spinner { width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error { color: var(--danger); background: var(--danger-soft); border-radius: 10px; padding: 10px 14px; margin-top: 16px; display: none; }
+  .error.show { display: block; }
+  footer { margin-top: 40px; font-size: 13px; color: var(--muted); text-align: center; }
+
+  @media (max-width: 600px) {
+    header { flex-direction: column; }
+    .input-row { flex-direction: column; }
+    #ask { padding: 12px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>Investment Research Assistant</h1>
+      <p class="subtitle">Ask about the 10-K filings of NVIDIA, AMD, Microsoft, Apple and Alphabet (fiscal 2024 and 2025).</p>
+    </div>
+    <span class="status" id="status"><span class="dot" id="status-dot"></span><span id="status-text">Connecting…</span></span>
+  </header>
+
+  <section class="card ask-card">
+    <div class="field-label"><span>Your question</span><span>Word suggestions come from the C++ Trie</span></div>
+    <div class="input-row">
+      <div class="input-wrap">
+        <input id="question" type="text" autocomplete="off" spellcheck="false" maxlength="500"
+               placeholder="e.g. What was NVIDIA data center revenue in fiscal 2025?"
+               role="combobox" aria-expanded="false" aria-controls="suggestions" aria-autocomplete="list">
+        <div class="suggestions" id="suggestions" role="listbox"></div>
+      </div>
+      <button id="ask" type="button">Ask</button>
+    </div>
+    <div class="hint"><kbd>↑</kbd> <kbd>↓</kbd> choose a suggestion · <kbd>Tab</kbd> accept · <kbd>Enter</kbd> ask · <kbd>Esc</kbd> close</div>
+
+    <div class="controls">
+      <div class="control">
+        <label>Search</label>
+        <div class="segmented" id="mode">
+          <button type="button" data-mode="approximate" class="on">Approximate</button>
+          <button type="button" data-mode="exact">Exact</button>
+        </div>
+      </div>
+      <div class="control">
+        <label for="ticker">Company</label>
+        <select id="ticker">
+          <option value="auto">Detect from question</option>
+          <option value="all">All companies</option>
+          <option value="NVDA">NVIDIA</option>
+          <option value="AMD">AMD</option>
+          <option value="MSFT">Microsoft</option>
+          <option value="AAPL">Apple</option>
+          <option value="GOOGL">Alphabet</option>
+        </select>
+      </div>
+      <div class="control">
+        <label for="year">Fiscal year</label>
+        <select id="year">
+          <option value="auto">Detect from question</option>
+          <option value="all">Both years</option>
+          <option value="2024">2024</option>
+          <option value="2025">2025</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="examples" id="examples"></div>
+  </section>
+
+  <div class="loading" id="loading"><span class="spinner"></span><span id="loading-text">Searching the filings…</span></div>
+  <div class="error" id="error"></div>
+
+  <section id="result">
+    <div class="section-title">Answer</div>
+    <div class="card">
+      <div class="answer" id="answer"></div>
+      <div class="meta" id="meta"></div>
+    </div>
+
+    <div class="section-title">Sources given to the model</div>
+    <div id="sources"></div>
+
+    <div class="section-title">How the context was chosen</div>
+    <div class="card table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Chunk</th><th>Company</th><th>FY</th><th>Score</th><th>Words</th><th>Decision</th></tr></thead>
+        <tbody id="decisions"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>Educational course project. Answers come from a small language model and may be wrong; this is not financial advice.</footer>
+</main>
+
+<script>
+const EXAMPLES = [
+  "What was NVIDIA data center revenue in fiscal 2025?",
+  "What risks does AMD describe about export restrictions to China?",
+  "How much did Microsoft Azure revenue grow in fiscal 2025?",
+  "nvidea gaming revenue",
+  "What legal or antitrust matters does Alphabet describe?",
+  "What is Tesla revenue from electric vehicles?",
+];
+const COMPANY = { NVDA: "NVIDIA", AMD: "AMD", MSFT: "Microsoft", AAPL: "Apple", GOOGL: "Alphabet" };
+const STATUS_LABEL = { selected: "selected", redundant: "redundant", over_budget: "over budget", limit: "chunk limit" };
+
+const $ = (id) => document.getElementById(id);
+const input = $("question");
+const box = $("suggestions");
+let mode = "approximate";
+let items = [];
+let active = -1;
+let suggestTimer = null;
+let suggestSeq = 0;
+
+function escapeHtml(text) {
+  return String(text).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+// ---- Autocomplete -------------------------------------------------------
+function closeSuggestions() {
+  box.classList.remove("open");
+  input.setAttribute("aria-expanded", "false");
+  items = [];
+  active = -1;
+}
+
+function renderSuggestions(data) {
+  const list = data.suggestions.length ? data.suggestions : data.corrections;
+  if (!list.length) return closeSuggestions();
+  items = list.map((entry) => entry.word);
+  active = -1;
+  const corrected = !data.suggestions.length;
+  const head = corrected
+    ? `No word starts with “${escapeHtml(data.prefix)}”. Did you mean:`
+    : `Words starting with “${escapeHtml(data.prefix)}”, most frequent first`;
+  box.innerHTML = `<div class="head">${head}</div>` + list.map((entry, i) => {
+    const word = escapeHtml(entry.word);
+    const shown = corrected ? word : `<b>${escapeHtml(entry.word.slice(0, data.prefix.length))}</b>${escapeHtml(entry.word.slice(data.prefix.length))}`;
+    const right = corrected ? `${entry.distance} edit${entry.distance === 1 ? "" : "s"}` : `${entry.frequency.toLocaleString()}×`;
+    return `<div class="suggestion" role="option" data-i="${i}"><span class="word">${shown}</span><span class="freq">${right}</span></div>`;
+  }).join("");
+  box.classList.add("open");
+  input.setAttribute("aria-expanded", "true");
+}
+
+function setActive(index) {
+  const rows = box.querySelectorAll(".suggestion");
+  if (!rows.length) return;
+  active = (index + rows.length) % rows.length;
+  rows.forEach((row, i) => row.classList.toggle("active", i === active));
+}
+
+function accept(index) {
+  const word = items[index];
+  if (word === undefined) return;
+  input.value = input.value.replace(/\S+$/, word) + " ";
+  closeSuggestions();
+  input.focus();
+}
+
+async function fetchSuggestions() {
+  const seq = ++suggestSeq;
+  const text = input.value;
+  try {
+    const response = await fetch(`/api/suggest?text=${encodeURIComponent(text)}`);
+    const data = await response.json();
+    if (seq === suggestSeq && input.value === text) renderSuggestions(data);
+  } catch { closeSuggestions(); }
+}
+
+input.addEventListener("input", () => {
+  clearTimeout(suggestTimer);
+  suggestTimer = setTimeout(fetchSuggestions, 60);
+});
+input.addEventListener("keydown", (event) => {
+  const open = box.classList.contains("open");
+  if (event.key === "ArrowDown" && open) { event.preventDefault(); setActive(active + 1); }
+  else if (event.key === "ArrowUp" && open) { event.preventDefault(); setActive(active - 1); }
+  else if (event.key === "Tab" && open) { event.preventDefault(); accept(active >= 0 ? active : 0); }
+  else if (event.key === "Enter") {
+    event.preventDefault();
+    if (open && active >= 0) accept(active); else { closeSuggestions(); ask(); }
+  }
+  else if (event.key === "Escape") closeSuggestions();
+});
+box.addEventListener("mousedown", (event) => {
+  const row = event.target.closest(".suggestion");
+  if (row) { event.preventDefault(); accept(Number(row.dataset.i)); }
+});
+input.addEventListener("blur", () => setTimeout(closeSuggestions, 100));
+
+// ---- Controls ------------------------------------------------------------
+$("mode").addEventListener("click", (event) => {
+  const button = event.target.closest("button");
+  if (!button) return;
+  mode = button.dataset.mode;
+  $("mode").querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === button));
+});
+$("examples").innerHTML = EXAMPLES.map((q) => `<button type="button" class="chip">${escapeHtml(q)}</button>`).join("");
+$("examples").addEventListener("click", (event) => {
+  const chip = event.target.closest(".chip");
+  if (!chip) return;
+  input.value = chip.textContent;
+  closeSuggestions();
+  ask();
+});
+$("ask").addEventListener("click", ask);
+
+// ---- Asking --------------------------------------------------------------
+async function ask() {
+  const question = input.value.trim();
+  if (!question || $("ask").disabled) return;
+  $("ask").disabled = true;
+  $("error").classList.remove("show");
+  $("loading").classList.add("show");
+  $("loading-text").textContent = modelLoaded ? "Searching the filings and writing the answer…" : "Loading the language model (first question only)…";
+  try {
+    const response = await fetch("/api/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question, mode, ticker: $("ticker").value, fiscal_year: $("year").value }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || `Request failed (${response.status})`);
+    renderResult(data);
+    refreshStatus();
+  } catch (error) {
+    $("error").textContent = error.message;
+    $("error").classList.add("show");
+  } finally {
+    $("ask").disabled = false;
+    $("loading").classList.remove("show");
+  }
+}
+
+function renderAnswer(answer, sourceCount) {
+  return escapeHtml(answer).replace(/\[(\d+)\]/g, (match, n) =>
+    Number(n) >= 1 && Number(n) <= sourceCount ? `<button type="button" class="cite" data-n="${n}">${n}</button>` : match);
+}
+
+function filterText(data, key, label) {
+  const value = data.filters[key];
+  if (value === null) return `${label}: <b>all</b>`;
+  const origin = data.filter_origin[key] === "detected" ? `<span class="tag">detected</span>` : "";
+  return `${label}: <b>${escapeHtml(key === "ticker" ? (COMPANY[value] || value) : value)}</b>${origin}`;
+}
+
+function renderResult(data) {
+  const sources = data.context.selected;
+  $("answer").innerHTML = renderAnswer(data.answer, sources.length);
+  $("meta").innerHTML = [
+    `Search: <b>${data.mode}</b>`,
+    filterText(data, "ticker", "Company"),
+    filterText(data, "fiscal_year", "Fiscal year"),
+    `Retrieval: <b>${data.retrieval.time_ms.toFixed(2)} ms</b> over <b>${data.retrieval.candidate_count}</b> candidate chunks`,
+    `Selection: <b>${data.context.time_ms.toFixed(2)} ms</b>, ${data.context.total_words} words`,
+    `Generation: <b>${(data.generation_ms / 1000).toFixed(1)} s</b> (${escapeHtml(data.model)})`,
+  ].map((part) => `<span>${part}</span>`).join("");
+
+  $("sources").innerHTML = sources.length ? sources.map((s, i) => {
+    const words = s.text.split(" ");
+    const short = words.length > 70 ? words.slice(0, 70).join(" ") + " …" : s.text;
+    return `<article class="card source" id="source-${i + 1}">
+      <div class="source-head">
+        <span class="source-num">[${i + 1}]</span>
+        <span class="source-company">${escapeHtml(s.company)}</span>
+        <span class="source-meta">10-K FY${s.fiscal_year} · filed ${escapeHtml(s.filing_date || "")} · <code>${escapeHtml(s.chunk_id)}</code> · score ${s.score.toFixed(3)} · ${s.word_count} words</span>
+      </div>
+      <p class="source-text" data-full="${escapeHtml(s.text)}" data-short="${escapeHtml(short)}">${escapeHtml(short)}</p>
+      <div class="source-actions">
+        ${words.length > 70 ? `<button type="button" class="linkish toggle">Show full text</button>` : ""}
+        <a href="${escapeHtml(s.source_url)}" target="_blank" rel="noopener">Open filing on SEC.gov ↗</a>
+      </div>
+    </article>`;
+  }).join("") : `<div class="card">No chunks matched this question, so the model was not called.</div>`;
+
+  $("decisions").innerHTML = data.context.decisions.map((d) => {
+    const hit = data.retrieval.results.find((r) => r.chunk_id === d.chunk_id) || {};
+    const note = d.redundant_with ? ` <span class="source-meta">copy of <code>${escapeHtml(d.redundant_with)}</code> (J = ${d.max_similarity.toFixed(2)})</span>` : "";
+    return `<tr><td>${d.rank}</td><td><code>${escapeHtml(d.chunk_id)}</code></td><td>${escapeHtml(COMPANY[hit.ticker] || hit.ticker || "")}</td>
+      <td>${hit.fiscal_year ?? ""}</td><td>${d.score.toFixed(3)}</td><td>${d.word_count}</td>
+      <td><span class="badge ${d.status}">${STATUS_LABEL[d.status] || d.status}</span>${note}</td></tr>`;
+  }).join("") || `<tr><td colspan="7">No candidates.</td></tr>`;
+
+  $("result").classList.add("show");
+  $("result").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+$("answer").addEventListener("click", (event) => {
+  const cite = event.target.closest(".cite");
+  if (!cite) return;
+  const card = $(`source-${cite.dataset.n}`);
+  card.scrollIntoView({ behavior: "smooth", block: "center" });
+  card.classList.add("flash");
+  setTimeout(() => card.classList.remove("flash"), 1400);
+});
+$("sources").addEventListener("click", (event) => {
+  const toggle = event.target.closest(".toggle");
+  if (!toggle) return;
+  const text = toggle.closest(".source").querySelector(".source-text");
+  const expanded = toggle.textContent === "Show less";
+  text.textContent = expanded ? text.dataset.short : text.dataset.full;
+  toggle.textContent = expanded ? "Show full text" : "Show less";
+});
+
+// ---- Status ----------------------------------------------------------------
+let modelLoaded = false;
+let statusTimer = null;
+async function refreshStatus() {
+  try {
+    const data = await (await fetch("/api/health")).json();
+    modelLoaded = data.model_loaded;
+    $("status-dot").classList.toggle("ready", modelLoaded);
+    $("status-text").textContent = modelLoaded
+      ? `${data.model.split("/").pop()} ready · ${data.chunks.toLocaleString()} chunks`
+      : `Loading ${data.model.split("/").pop()}…`;
+    clearTimeout(statusTimer);
+    if (!modelLoaded) statusTimer = setTimeout(refreshStatus, 2000);
+  } catch {
+    $("status-text").textContent = "Server not reachable";
+  }
+}
+refreshStatus();
+input.focus();
+// A link such as /?q=What+was+NVIDIA+revenue asks that question on load.
+const linked = new URLSearchParams(location.search).get("q");
+if (linked) { input.value = linked; ask(); }
+</script>
+</body>
+</html>

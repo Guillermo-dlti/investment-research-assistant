@@ -23,7 +23,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | 9 | Language model answers | Slice 2: Stage 5 | in-progress |
 | 10 | Twenty question run | Slice 2: Stage 5 | in-progress |
 | 11 | Exact vs approximate comparison (Stage 6) | Slice 3: Stage 6 | planned |
-| 12 | GUI with Trie autocomplete (bonus) | Slice 4: Bonus | planned |
+| 12 | GUI with Trie autocomplete (bonus) | Slice 4: Bonus | in-progress |
 | 13 | Final report | Deliverables | planned |
 | 14 | Demo video | Deliverables | planned |
 
@@ -118,7 +118,9 @@ Runs one test question set through both search modes and compares average time, 
 ### 12. GUI with Trie autocomplete (bonus) · Alpha
 A window where you type a question, get word suggestions from the C++ Trie as you type, and see the answer with its source chunks. Worth 10 points only if the whole project is complete.
 **Done when:** typing a prefix shows Trie suggestions, submitting shows the answer plus sources, and it shows the educational, not financial advice disclaimer.
-- [ ] Build it: `/develop gui with trie autocomplete`
+- [x] Build it: `/develop gui with trie autocomplete`
+   - [x] Standard library server (`/api/suggest`, `/api/ask`, `/api/health`) and one page: live Trie suggestions ranked by corpus frequency, Levenshtein "did you mean" when no word matches, mode and filter controls, clickable citations, source cards with SEC links, the selection table, and the disclaimer; 11 tests with a fake model
+Code in `src/python/gui_server.py`, `src/gui/index.html`
 
 ## Deliverables
 
