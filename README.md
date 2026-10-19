@@ -33,9 +33,9 @@ Financial reports will be collected and converted into clean text. The text will
 
 ## Current Status
 
-**Stage 2 — Text Preprocessing and Indexing: Step 12 complete**
+**Stage 2 — Text Preprocessing and Indexing: Complete through Step 13**
 
-The ten selected SEC filings have been downloaded, extracted, chunked, consolidated, and preprocessed. The C++17 Trie and chunk-level inverted index can now be used directly from Python through pybind11. Additional matching and similarity algorithms, AI integration, and the user interface have not yet been implemented.
+The ten selected SEC filings have been downloaded, extracted, chunked, consolidated, preprocessed, indexed, and validated end to end. The C++17 Trie and chunk-level inverted index can be used directly from Python through pybind11. See `reports/stage2_validation.md` for the final Stage 2 results. Additional matching and similarity algorithms, AI integration, and the user interface have not yet been implemented.
 
 ## Development Setup
 
@@ -178,7 +178,7 @@ python src/python/preprocess_text.py \
   --vocabulary data/metadata/vocabulary.json
 ```
 
-The preprocessed collection stores each original chunk ID and useful filing metadata alongside `normalized_text`, `tokens`, and `token_count`. The vocabulary stores lexicographically sorted token-frequency records plus the normalization and tokenization policies. These generated files are ignored by Git and can be reproduced from the consolidated collection. The C++ Trie uses the vocabulary now; a later stage will use the token arrays to build the inverted index.
+The preprocessed collection stores each original chunk ID and useful filing metadata alongside `normalized_text`, `tokens`, and `token_count`. The vocabulary stores lexicographically sorted token-frequency records plus the normalization and tokenization policies. These generated files are ignored by Git and can be reproduced from the consolidated collection. The C++ Trie consumes the vocabulary, and the C++ inverted index consumes the chunk token arrays.
 
 ## C++ Trie
 
