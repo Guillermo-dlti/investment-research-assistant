@@ -17,7 +17,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | 3 | Python and C++ bridge | Foundation | existing |
 | 4 | Exact search with KMP and Z function (Stage 3) | Foundation | existing |
 | 5 | Levenshtein fuzzy term matching | Slice 1: Stage 4 | in-progress |
-| 6 | N gram Jaccard similarity | Slice 1: Stage 4 | planned |
+| 6 | N gram Jaccard similarity | Slice 1: Stage 4 | in-progress |
 | 7 | Approximate retrieval and reranking | Slice 1: Stage 4 | planned |
 | 8 | Context selection | Slice 2: Stage 5 | planned |
 | 9 | Language model answers | Slice 2: Stage 5 | planned |
@@ -54,10 +54,16 @@ A C++ edit distance that maps misspelled or varied query words to real vocabular
 - [ ] Test it: `/test levenshtein fuzzy term matching`
 Spec [0001](../specs/0001-levenshtein-fuzzy-term-matching.md) · code in `src/cpp/levenshtein.*`, `src/python/search_engine.py`
 
-### 6. N gram Jaccard similarity · needs a decision
+### 6. N gram Jaccard similarity · in-progress · assumed decision (spec 0002)
 C++ n gram sets and Jaccard similarity to score how close a query is to each chunk, even when the words are not exact.
 **Done when:** each candidate chunk gets a 0 to 1 similarity score against the query; C++ tests, a binding and Python tests exist; the n gram choice (characters or words) is explained.
-- [ ] Design it (spec): `/architect n gram jaccard similarity`
+- [ ] Design it (spec): `/architect n gram jaccard similarity` (ratify the assumed spec)
+- [x] Build it: `/develop n gram jaccard similarity`
+   - [x] C++ character and word n grams, Jaccard, and `JaccardIndex`, with 11 CTests and a demo
+   - [x] pybind11 binding plus `SearchEngine.jaccard_search()`, with Python tests
+- [ ] Verify it: `/check verify n gram jaccard similarity`
+- [ ] Test it: `/test n gram jaccard similarity`
+Spec [0002](../specs/0002-ngram-jaccard-similarity.md) · code in `src/cpp/ngram_jaccard.*`, `src/python/search_engine.py`
 
 ### 7. Approximate retrieval and reranking · needs a decision
 Adds an approximate search mode to `SearchEngine` that uses features 5 and 6 to score chunks again and return a new order, without breaking exact search.
