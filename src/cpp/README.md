@@ -1,6 +1,6 @@
 # C++ Algorithms and Data Structures
 
-This directory contains custom C++17 data structures for the normalized financial corpus: a Trie for vocabulary lookup and an inverted index for chunk retrieval.
+This directory contains custom C++17 data structures and algorithms for the normalized financial corpus: a Trie for vocabulary lookup, an inverted index for chunk retrieval, and KMP and Z-function exact matchers.
 
 ## Components
 
@@ -17,6 +17,9 @@ This directory contains custom C++17 data structures for the normalized financia
 - `kmp.h` and `kmp.cpp`: LPS construction, exact KMP search, and match counting.
 - `kmp_demo.cpp`: synthetic and real normalized-chunk matching examples.
 - `tests/kmp_tests.cpp`: fifteen portable KMP test cases.
+- `z_function.h` and `z_function.cpp`: linear Z-array construction, exact search, and match counting.
+- `z_function_demo.cpp`: Z-array, synthetic matching, and real normalized-chunk examples compared with KMP.
+- `tests/z_function_tests.cpp`: seventeen portable Z-function test categories, including fixed-seed KMP comparisons.
 
 No external Trie or JSON library is used. Nodes own their children with `std::unique_ptr`, and each node uses `std::map<unsigned char, ...>` so traversal is deterministic and bytewise lexicographic.
 
@@ -30,6 +33,7 @@ cmake --build build --parallel
 ./build/trie_demo data/metadata/vocabulary.json
 ./build/inverted_index_demo data/processed/preprocessed_collection.json
 ./build/kmp_demo data/processed/preprocessed_collection.json
+./build/z_function_demo data/processed/preprocessed_collection.json
 PYTHONPATH=build/python python -m src.python.search_demo
 ctest --test-dir build --output-on-failure
 ```
@@ -58,7 +62,7 @@ The inverted index uses `token -> {chunk_id -> term_frequency}`. The outer token
 
 For `q` unique query terms, let `df_i` be each term's postings length, `P = sum(df_i)`, `M` the number of matched chunks, `C` the total chunks, and `V` the vocabulary size. Under average hash-table behavior, a copied single-token lookup costs `O(1 + df)`; AND costs `O(q log q + P)` after ordering lists by size; and sequential OR merging costs up to `O(qC + P)`. Ranking after matching costs `O(Mq log C + M log M)` with ordered postings lookups and final score sorting. With adversarial collisions, each outer token-table lookup can degrade from `O(1)` average to `O(V)` worst case, adding `O(qV)` to Boolean lookup or `O(MqV)` to scoring. Index memory is `O(C + V + P_total)`, where `P_total` is the total number of distinct token/chunk pairs.
 
-Raw term-frequency ranking sums occurrences of unique query terms. It can overvalue repetition and overlapping chunks and does not normalize for chunk length or token rarity. The index holds the complete collection in memory. KMP, Z-function, approximate matching, n-grams, Jaccard similarity, and benchmarks remain future work.
+Raw term-frequency ranking sums occurrences of unique query terms. It can overvalue repetition and overlapping chunks and does not normalize for chunk length or token rarity. The index holds the complete collection in memory. Exact matching is not yet integrated with ranking; approximate matching, n-grams, Jaccard similarity, and benchmarks remain future work.
 
 ## Python Extension
 
@@ -83,7 +87,7 @@ Python strings are encoded as UTF-8 by pybind11 and remain subject to the C++ co
 
 Interop converts Python strings and token lists into C++ values and copies C++ result vectors back into Python objects. For input size `I` and returned data size `O`, this adds approximately `O(I + O)` conversion work and corresponding temporary allocations. It does not change Trie lookup, postings intersection/union, or ranking complexity. Fine-grained calls can incur noticeable fixed interpreter-boundary overhead even when the C++ operation is small.
 
-The extension has no stable binary compatibility across unrelated Python versions; rebuild it with the exact interpreter that will import it. The verified environment used Python 3.14.7 with pybind11 3.1.0 and Apple Clang 21. KMP remains a standalone C++ target and is not part of the module; Z-function, approximate matching, AI integration, and the frontend are also absent.
+The extension has no stable binary compatibility across unrelated Python versions; rebuild it with the exact interpreter that will import it. The verified environment used Python 3.14.7 with pybind11 3.1.0 and Apple Clang 21. KMP and the Z-function remain standalone C++ targets and are not part of the module; approximate matching, AI integration, and the frontend are also absent.
 
 ## KMP Exact Matching
 
@@ -92,3 +96,18 @@ The extension has no stable binary compatibility across unrelated Python version
 Matching is byte-oriented. Valid UTF-8, currency symbols, percentages, punctuation, and hyphenated text are preserved, but returned positions are byte offsets and C++ performs no normalization. Empty patterns intentionally return no positions and count zero.
 
 For `n` text bytes and `m` pattern bytes, LPS construction takes `O(m)` time and search takes `O(n)` time, for `O(n + m)` total. Auxiliary space is `O(m)` for LPS, plus `O(z)` output space for `z` returned positions. The demo found `artificial intelligence` in the real normalized token stream for `NVDA_2024_10K_0009` at byte offset 461.
+
+## Z-function Exact Matching
+
+`computeZ(text)` computes the bytewise Z-array, where each entry is the length of the longest prefix also beginning at that position and `Z[0] = 0`. The linear algorithm maintains a known matching Z-box `[l, r)`. For an index inside the box it reuses a previously computed value up to the remaining box length, then performs new comparisons only when extending past `r`. `zSearch(text, pattern)` returns every ascending zero-based byte offset, including overlaps, while `zCount` performs the same scan without storing offsets.
+
+Search constructs an integer sequence from the pattern, a separator, and the text. Input bytes are converted through `unsigned char` to values `0..255`; the separator is the distinct value `256`. It therefore cannot collide with arbitrary punctuation, embedded nulls, byte 255, or UTF-8 bytes. Matching is exact and performs no normalization or Unicode decoding, so returned offsets count bytes. Empty patterns intentionally produce no positions and count zero; empty text and patterns longer than the text also produce no matches.
+
+Run the demonstration and focused tests from the repository root:
+
+```bash
+./build/z_function_demo data/processed/preprocessed_collection.json
+ctest --test-dir build -L z_function --output-on-failure
+```
+
+For text length `n` and pattern length `m`, search takes `O(n + m)` time. Its combined sequence and Z-array require `O(n + m)` auxiliary space, with another `O(z)` when returning `z` positions. A direct Z-array for a sequence of length `n` takes `O(n)` time and space. KMP provides the same `O(n + m)` total time but uses an `O(m)` LPS table instead of materializing the combined input and Z-array. KMP responds to mismatches using prefix/suffix fallback lengths; the Z-function reuses known prefix matches inside its Z-box. Both demos agree on the synthetic examples and find `artificial intelligence` in real normalized chunk `NVDA_2024_10K_0009` at byte offset 461.

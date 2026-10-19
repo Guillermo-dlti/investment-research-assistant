@@ -33,9 +33,9 @@ Financial reports will be collected and converted into clean text. The text will
 
 ## Current Status
 
-**Stage 3 — Exact String Matching: Step 14 complete**
+**Stage 3 — Exact String Matching: Step 15 complete**
 
-Stage 2 is complete and validated. Stage 3 now includes a standalone C++17 Knuth-Morris-Pratt implementation for exact byte-string matching. KMP is not exposed through Python yet; Z-function, approximate and similarity matching, AI integration, and the user interface remain unimplemented.
+Stage 2 is complete and validated. Stage 3 now includes standalone C++17 implementations of Knuth-Morris-Pratt and the Z-function for exact byte-string matching. Neither exact matcher is exposed through Python yet; approximate and similarity matching, AI integration, and the user interface remain unimplemented.
 
 ## Development Setup
 
@@ -266,6 +266,26 @@ ctest --test-dir build --output-on-failure
 ```
 
 For text length `n` bytes and pattern length `m` bytes, LPS construction is `O(m)`, searching is `O(n)`, and the combined operation is `O(n + m)`. The LPS table requires `O(m)` auxiliary space; the returned positions require `O(z)` output space for `z` matches. KMP has not been added to `investment_engine` and is not used for ranking.
+
+## Z-function Exact Matching
+
+The custom C++17 Z-function records at each position the length of the prefix that matches the sequence beginning there. Its linear Z-box algorithm maintains a known matching interval `[l, r)`: positions inside that interval reuse an earlier Z value, and only comparisons that extend beyond `r` advance the right boundary. Pattern search computes the array for `pattern + separator + text`; an entry at least as long as the pattern identifies a match. This is useful for locating exact financial phrases, identifiers, percentages, and currency values while retaining overlapping occurrences.
+
+The combined sequence stores every input byte as an unsigned integer in `0` through `255` and uses `256` as the separator. That value cannot collide with punctuation, embedded null bytes, byte 255, or bytes in valid UTF-8. Matching performs no normalization and returns ascending, zero-based byte offsets. `Z[0]` is defined as zero. Empty patterns, empty text with a nonempty pattern, and patterns longer than the text produce no matches; an empty pattern has count zero.
+
+Build, run both exact-matching demonstrations, and execute the focused Z-function tests:
+
+```bash
+cmake -S . -B build \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DPython_EXECUTABLE="$PWD/.venv/bin/python"
+cmake --build build --parallel
+./build/kmp_demo data/processed/preprocessed_collection.json
+./build/z_function_demo data/processed/preprocessed_collection.json
+ctest --test-dir build -L z_function --output-on-failure
+```
+
+For `n` text bytes and `m` pattern bytes, Z-array construction is linear in its input length and a search takes `O(n + m)` time. This implementation requires `O(n + m)` auxiliary space for the combined integer sequence and its Z-array, plus `O(z)` for `z` returned positions; counting does not allocate the positions. KMP has the same `O(n + m)` search bound but needs only `O(m)` auxiliary space for its LPS table. Conceptually, KMP uses pattern fallback information after mismatches, whereas the Z-function reuses prefix matches within its Z-box. The Z-function is not exposed by `investment_engine` and is not used for ranking.
 
 ## Disclaimer
 

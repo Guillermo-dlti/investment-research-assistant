@@ -38,11 +38,15 @@ target_link_libraries(inverted_index_core PUBLIC json_support)
 add_library(kmp_core src/cpp/kmp.cpp)
 target_include_directories(kmp_core PUBLIC src/cpp)
 
+add_library(z_function_core src/cpp/z_function.cpp)
+target_include_directories(z_function_core PUBLIC src/cpp)
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
     target_compile_options(json_support PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(trie_core PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(inverted_index_core PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(kmp_core PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(z_function_core PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
 add_executable(trie_demo src/cpp/trie_demo.cpp)
@@ -53,6 +57,9 @@ target_link_libraries(inverted_index_demo PRIVATE inverted_index_core)
 
 add_executable(kmp_demo src/cpp/kmp_demo.cpp)
 target_link_libraries(kmp_demo PRIVATE kmp_core inverted_index_core)
+
+add_executable(z_function_demo src/cpp/z_function_demo.cpp)
+target_link_libraries(z_function_demo PRIVATE z_function_core kmp_core inverted_index_core)
 
 pybind11_add_module(investment_engine MODULE src/cpp/python_bindings.cpp)
 target_link_libraries(investment_engine PRIVATE trie_core inverted_index_core)
@@ -73,6 +80,9 @@ target_link_libraries(inverted_index_tests PRIVATE inverted_index_core)
 add_executable(kmp_tests src/cpp/tests/kmp_tests.cpp)
 target_link_libraries(kmp_tests PRIVATE kmp_core)
 
+add_executable(z_function_tests src/cpp/tests/z_function_tests.cpp)
+target_link_libraries(z_function_tests PRIVATE z_function_core kmp_core)
+
 set(SYNTHETIC_TRIE_TESTS
     insert_and_search
     missing_words
@@ -89,6 +99,16 @@ set(SYNTHETIC_TRIE_TESTS
 foreach(TEST_NAME IN LISTS SYNTHETIC_TRIE_TESTS)
     add_test(NAME "trie_${TEST_NAME}" COMMAND trie_tests "${TEST_NAME}")
     set_tests_properties("trie_${TEST_NAME}" PROPERTIES LABELS "portable")
+endforeach()
+
+set(Z_FUNCTION_TESTS
+    basic_z repeated_z empty_z basic no_match multiple overlapping boundaries
+    full_text longer empty_inputs punctuation utf8 embedded_null separator_safety
+    randomized deterministic
+)
+foreach(TEST_NAME IN LISTS Z_FUNCTION_TESTS)
+    add_test(NAME "z_function_${TEST_NAME}" COMMAND z_function_tests "${TEST_NAME}")
+    set_tests_properties("z_function_${TEST_NAME}" PROPERTIES LABELS "portable;z_function")
 endforeach()
 
 set(TRIE_VOCABULARY_PATH
