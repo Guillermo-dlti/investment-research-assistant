@@ -33,9 +33,9 @@ Financial reports will be collected and converted into clean text. The text will
 
 ## Current Status
 
-**Stage 1 — Document Selection and Preparation: Complete**
+**Stage 2 — Text Preprocessing and Indexing: Step 9 complete**
 
-The ten selected SEC filings have been downloaded, extracted, chunked, and consolidated. Stage 2 preprocessing, retrieval algorithms, AI integration, and the user interface have not yet been implemented.
+The ten selected SEC filings have been downloaded, extracted, chunked, consolidated, and preprocessed. The C++ data structures, retrieval algorithms, AI integration, and user interface have not yet been implemented.
 
 ## Development Setup
 
@@ -156,6 +156,29 @@ python src/python/chunk_documents.py --all --chunk-size 250 --overlap 40
 python src/python/build_collection.py
 python -m pytest tests -q
 ```
+
+## Text Preprocessing
+
+Preprocessing creates a separate normalized representation of every consolidated chunk; it does not alter the source collection or replace the original text. The normalization procedure is deterministic:
+
+- Apply Unicode NFKC normalization.
+- Convert common Unicode apostrophes to `'` and dash/minus variants to `-`.
+- Normalize case with Python's `casefold()`.
+- Collapse each whitespace run to one ASCII space and remove surrounding whitespace.
+- Retain stopwords, accents, and numeric information; do not stem or lemmatize words.
+
+The regular-expression tokenizer keeps monetary amounts, percentages, signed numbers, decimal values, comma-separated numbers, hyphenated compounds, possessives, ampersand terms, and multi-period abbreviations intact. For example, `$97,858`, `12.5%`, `ai-powered`, `year-over-year`, `nvidia's`, and `u.s.` each form one token. `S&P 500` becomes the two tokens `s&p` and `500`. Company names and stock tickers are case-folded like other words, so `NVIDIA`, `nvidia`, and `NVDA` become `nvidia`, `nvidia`, and `nvda`.
+
+Run preprocessing from the project root:
+
+```bash
+python src/python/preprocess_text.py \
+  --input data/chunks/collection.json \
+  --output data/processed/preprocessed_collection.json \
+  --vocabulary data/metadata/vocabulary.json
+```
+
+The preprocessed collection stores each original chunk ID and useful filing metadata alongside `normalized_text`, `tokens`, and `token_count`. The vocabulary stores lexicographically sorted token-frequency records plus the normalization and tokenization policies. These generated files are ignored by Git and can be reproduced from the consolidated collection. A later stage will use the vocabulary and token arrays as inputs to the C++ Trie and inverted index; those data structures are not implemented yet.
 
 ## Disclaimer
 
