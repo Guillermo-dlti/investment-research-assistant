@@ -77,6 +77,28 @@ When finished, leave the virtual environment:
 deactivate
 ```
 
+## Document Preparation
+
+Original SEC filings are stored in `data/raw/`, while readable text and structured JSON results are stored in `data/processed/`. Keeping the source HTML separate preserves an auditable copy of the official filing and allows extraction to be repeated without downloading it again.
+
+Activate the virtual environment and provide a real contact email for the SEC request header:
+
+```bash
+source .venv/bin/activate
+export SEC_CONTACT_EMAIL="your_real_contact_email"
+python src/python/download_documents.py
+```
+
+The downloader retrieves only NVIDIA's official FY2025 Form 10-K and saves it as `data/raw/nvidia_2025.html`. It does not overwrite a valid existing copy. Use `--force` only when an existing file intentionally needs to be replaced.
+
+After the HTML file is present, extract its readable content and metadata:
+
+```bash
+python src/python/extract_text.py
+```
+
+The extractor writes `data/processed/nvidia_2025.txt` and `data/processed/nvidia_2025.json`.
+
 ## Disclaimer
 
 This application is intended solely for educational and research purposes. It does not provide personalized financial advice, investment recommendations, or a substitute for professional financial guidance.
