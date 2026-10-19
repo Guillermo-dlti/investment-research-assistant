@@ -76,9 +76,16 @@ def engine(tmp_path: Path) -> SearchEngine:
     return SearchEngine(vocabulary_path, collection_path)
 
 
-def comparable(results: list[dict[str, Any]]) -> list[tuple[str, int, list[int]]]:
+def comparable(
+    results: list[dict[str, Any]],
+) -> list[tuple[str, int, int, list[int]]]:
     return [
-        (result["chunk_id"], result["match_count"], result["match_byte_offsets"])
+        (
+            result["chunk_id"],
+            result["score"],
+            result["match_count"],
+            result["match_byte_offsets"],
+        )
         for result in results
     ]
 
@@ -133,8 +140,11 @@ def test_embedded_null_characters_are_preserved() -> None:
 
 def test_financial_punctuation(engine: SearchEngine) -> None:
     results = engine.exact_phrase_search("$97,858", algorithm="z")
-    assert [(result["chunk_id"], result["match_count"]) for result in results] == [
-        ("CHUNK_A", 1)
+    assert [
+        (result["chunk_id"], result["score"], result["match_count"])
+        for result in results
+    ] == [
+        ("CHUNK_A", 1, 1)
     ]
 
 
@@ -168,6 +178,7 @@ def test_chunk_metadata_is_preserved(engine: SearchEngine) -> None:
         "match_count": 1,
         "match_byte_offsets": [66],
         "algorithm": "kmp",
+        "score": 1,
     }
 
 
@@ -176,6 +187,95 @@ def test_results_have_deterministic_chunk_order(engine: SearchEngine) -> None:
     second = engine.exact_phrase_search("artificial intelligence", algorithm="z")
     assert [result["chunk_id"] for result in first] == ["CHUNK_A", "CHUNK_C"]
     assert first == second
+
+
+def test_ranking_uses_exact_occurrence_count(engine: SearchEngine) -> None:
+    results = engine.exact_phrase_search("artificial intelligence")
+    assert [(result["chunk_id"], result["score"]) for result in results] == [
+        ("CHUNK_A", 2),
+        ("CHUNK_C", 1),
+    ]
+    assert all(result["score"] == result["match_count"] for result in results)
+
+
+def test_ranking_ties_use_ascending_chunk_id(engine: SearchEngine) -> None:
+    results = engine.exact_phrase_search("and")
+    assert [(result["chunk_id"], result["score"]) for result in results] == [
+        ("CHUNK_A", 1),
+        ("CHUNK_B", 1),
+    ]
+
+
+def test_top_k_is_applied_after_ranking(engine: SearchEngine) -> None:
+    top_result = engine.exact_phrase_search("artificial intelligence", top_k=1)
+    assert [(result["chunk_id"], result["score"]) for result in top_result] == [
+        ("CHUNK_A", 2)
+    ]
+    all_results = engine.exact_phrase_search("artificial intelligence", top_k=20)
+    assert [result["chunk_id"] for result in all_results] == ["CHUNK_A", "CHUNK_C"]
+
+
+def test_top_k_zero_returns_no_results(engine: SearchEngine) -> None:
+    assert engine.exact_phrase_search("artificial intelligence", top_k=0) == []
+
+
+def test_negative_top_k_is_rejected(engine: SearchEngine) -> None:
+    with pytest.raises(ValueError, match="non-negative"):
+        engine.exact_phrase_search("artificial intelligence", top_k=-1)
+
+
+def test_unknown_ticker_returns_no_results(engine: SearchEngine) -> None:
+    assert engine.exact_phrase_search("artificial intelligence", ticker="NONE") == []
+
+
+def test_ticker_filter_is_case_insensitive(engine: SearchEngine) -> None:
+    results = engine.exact_phrase_search("artificial intelligence", ticker="alfa")
+    assert [result["chunk_id"] for result in results] == ["CHUNK_A"]
+
+
+def test_fiscal_year_filter(engine: SearchEngine) -> None:
+    results = engine.exact_phrase_search("artificial intelligence", fiscal_year=2023)
+    assert [result["chunk_id"] for result in results] == ["CHUNK_C"]
+
+
+def test_combined_metadata_filters(engine: SearchEngine) -> None:
+    results = engine.exact_phrase_search(
+        "artificial intelligence",
+        ticker="CHARLIE",
+        fiscal_year=2023,
+    )
+    assert [result["chunk_id"] for result in results] == ["CHUNK_C"]
+    assert engine.exact_phrase_search(
+        "artificial intelligence",
+        ticker="CHARLIE",
+        fiscal_year=2024,
+    ) == []
+
+
+def test_rankings_are_equivalent_between_algorithms(engine: SearchEngine) -> None:
+    kmp = engine.exact_phrase_search("artificial intelligence", algorithm="kmp")
+    z_function = engine.exact_phrase_search(
+        "artificial intelligence", algorithm="z"
+    )
+    assert comparable(kmp) == comparable(z_function)
+
+
+def test_metadata_filtering_with_full_scan_fallback(engine: SearchEngine) -> None:
+    results = engine.exact_phrase_search(
+        "$97",
+        algorithm="z",
+        token_boundaries=False,
+        ticker="alfa",
+        fiscal_year=2024,
+    )
+    assert [(result["chunk_id"], result["score"]) for result in results] == [
+        ("CHUNK_A", 1)
+    ]
+    assert engine.exact_phrase_search(
+        "$97",
+        token_boundaries=False,
+        ticker="BETA",
+    ) == []
 
 
 @pytest.mark.skipif(

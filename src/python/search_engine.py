@@ -92,23 +92,44 @@ class SearchEngine:
         *,
         algorithm: str = "kmp",
         token_boundaries: bool = True,
+        ticker: str | None = None,
+        fiscal_year: int | None = None,
+        top_k: int | None = None,
     ) -> list[dict[str, Any]]:
-        """Find an exact normalized phrase with a bound C++ matcher.
+        """Find and rank an exact normalized phrase with a bound C++ matcher.
 
         Results use byte offsets into each chunk's stored ``normalized_text``.
         Token-boundary mode accepts matches spanning complete tokenizer tokens.
         Candidate filtering is used only when that mode and the normalized query
         make an AND-index lookup provably safe; all other cases scan every chunk.
+        Metadata filters run before matching. Results rank by descending exact
+        occurrence count and then ascending chunk ID before ``top_k`` is applied.
         """
         if not isinstance(algorithm, str):
             raise TypeError("algorithm must be a string")
         selected = EXACT_ALGORITHMS.get(algorithm.casefold())
         if selected is None:
             raise ValueError("algorithm must be 'kmp' or 'z'")
+        if ticker is not None and not isinstance(ticker, str):
+            raise TypeError("ticker must be a string or None")
+        if fiscal_year is not None and (
+            not isinstance(fiscal_year, int) or isinstance(fiscal_year, bool)
+        ):
+            raise TypeError("fiscal_year must be an integer or None")
+        if top_k is not None and (
+            not isinstance(top_k, int) or isinstance(top_k, bool)
+        ):
+            raise TypeError("top_k must be a non-negative integer or None")
+        if top_k is not None and top_k < 0:
+            raise ValueError("top_k must be non-negative")
+        if top_k == 0:
+            return []
+
         algorithm_name, matcher = selected
         pattern = normalize_text(query)
         if not pattern:
             return []
+        normalized_ticker = ticker.strip().casefold() if ticker is not None else None
 
         tokens = tokenize(pattern, already_normalized=True)
         can_filter = token_boundaries and bool(tokens) and pattern == " ".join(tokens)
@@ -120,6 +141,17 @@ class SearchEngine:
         pattern_size = len(pattern.encode("utf-8"))
         results: list[dict[str, Any]] = []
         for chunk_id in candidate_ids:
+            chunk_result = self._chunk_result(chunk_id)
+            if normalized_ticker is not None and (
+                chunk_result.get("ticker", "").casefold() != normalized_ticker
+            ):
+                continue
+            if (
+                fiscal_year is not None
+                and chunk_result.get("fiscal_year") != fiscal_year
+            ):
+                continue
+
             text = self._normalized_chunks[chunk_id]
             offsets = list(matcher(text, pattern))
             if token_boundaries and offsets:
@@ -130,15 +162,18 @@ class SearchEngine:
                     if offset in starts and offset + pattern_size in ends
                 ]
             if offsets:
+                score = len(offsets)
                 results.append(
                     {
-                        **self._chunk_result(chunk_id),
-                        "match_count": len(offsets),
+                        **chunk_result,
+                        "match_count": score,
                         "match_byte_offsets": offsets,
                         "algorithm": algorithm_name,
+                        "score": score,
                     }
                 )
-        return results
+        results.sort(key=lambda result: (-result["score"], result["chunk_id"]))
+        return results if top_k is None else results[:top_k]
 
     def _chunk_result(self, chunk_id: str) -> dict[str, Any]:
         metadata = self.index.get_metadata(chunk_id) or {}

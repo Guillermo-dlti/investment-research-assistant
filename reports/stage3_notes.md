@@ -2,7 +2,7 @@
 
 ## Scope
 
-Step 14 added a custom C++17 Knuth-Morris-Pratt implementation. Step 15 added a custom C++17 Z-function implementation and compared its exact matches with KMP. Step 16 exposes both implementations through pybind11 and adds exact phrase retrieval to the existing Python `SearchEngine`. Stage 3 does not add approximate matching, similarity algorithms, a new ranking formula, or AI integration.
+Step 14 added a custom C++17 Knuth-Morris-Pratt implementation. Step 15 added a custom C++17 Z-function implementation and compared its exact matches with KMP. Step 16 exposed both implementations through pybind11 and added exact phrase retrieval to the existing Python `SearchEngine`. Step 17 adds occurrence-count ranking, top-k selection, and optional ticker/year filtering to that exact retrieval path. Stage 3 does not add approximate matching, similarity algorithms, TF-IDF, BM25, or AI integration.
 
 ## KMP Design
 
@@ -133,6 +133,62 @@ PYTHONPATH=build/python .venv/bin/python -m pytest tests -q
 PYTHONPATH=build/python .venv/bin/python -m src.python.exact_search_demo
 ```
 
-The Python layer retains every normalized chunk string in memory in addition to the C++ inverted index. Full-scan fallback runs the selected linear matcher once per chunk and is therefore linear in the total scanned text plus repeated pattern preprocessing. Exact retrieval is deterministic but is not ranked, Unicode-code-point aware, or restricted by company/year filters. No benchmark was performed.
+At the end of Step 16, exact retrieval was deterministic but not yet ranked or filterable by company/year. It was not Unicode-code-point aware, and no benchmark was performed. The Python layer retained every normalized chunk string in memory in addition to the C++ inverted index, while full-scan fallback ran the selected linear matcher once per chunk.
 
 Final verification passed 56/56 C++ tests and 72/72 Python tests, including all 15 new exact-search tests. The existing search demonstration still reported 14,180 vocabulary tokens, 2,458 indexed chunks, and the same Boolean and ranked results. All 48 files under `data/raw`, `data/processed`, `data/chunks`, and `data/metadata` retained identical before/after hashes. The three previously recorded collection hashes also remained unchanged.
+
+## Step 17 Exact Match Ranking
+
+Exact phrase results now define:
+
+`score(chunk, query) = number of exact phrase occurrences in the chunk`
+
+The score is computed as the length of the byte-offset list returned by the selected C++ matcher after optional token-boundary filtering. It therefore equals `match_count` and cannot diverge from the actual accepted matches. Results sort by descending score, then ascending chunk ID for deterministic ties. KMP and the Z-function use the same Python ranking path and produce identical rankings when their offsets agree.
+
+The optional `top_k` argument is applied after the complete ranking. Omitting it returns all matching chunks, zero returns an empty list, a value larger than the available result count returns every match, and a negative value raises `ValueError`.
+
+## Step 17 Metadata Filters
+
+The optional `ticker` and `fiscal_year` arguments compare against actual chunk metadata from the C++ index. Tickers are stripped and compared case-insensitively. Unknown tickers return an empty list without error. Ticker-only, year-only, combined, and unfiltered searches are supported.
+
+Filtering occurs after safe inverted-index candidate selection but before the selected KMP or Z-function call. It therefore avoids matching text from excluded chunks while preserving both candidate modes: canonical token phrases use AND candidates, while unsafe tokenization cases continue to use the full-scan fallback before metadata pruning. Filters never inspect query keywords and do not affect Stage 2 term-frequency ranking.
+
+The implemented API is:
+
+```python
+engine.exact_phrase_search(
+    query,
+    algorithm="kmp",       # "kmp" or "z"
+    token_boundaries=True,
+    ticker=None,            # case-insensitive when provided
+    fiscal_year=None,
+    top_k=None,
+)
+```
+
+Every result preserves the previous fields and adds `score`.
+
+## Step 17 Verified Results
+
+- `artificial intelligence` matched 30 chunks with identical KMP and Z-function rankings.
+- `GOOGL_2025_10K_0067` ranked first with score/count 2 and offsets `[723, 1000]`.
+- The remaining displayed top-five results each scored 1 and were tie-broken by chunk ID.
+- Case-insensitive ticker filtering for `nvda` returned NVIDIA chunks only.
+- Fiscal-year filtering for 2025 ranked the same Alphabet chunk first with score 2.
+- Combined NVDA/FY2025 filtering returned `NVDA_2025_10K_0009` at `[468]` and `NVDA_2025_10K_0121` at `[397]`, each with score 1.
+- `$0.001` ranked both Alphabet chunks at score 2 before both NVIDIA chunks at score 1.
+- The demonstration's absent phrase returned no results.
+
+## Step 17 Complexity and Limitations
+
+Let `C` be the number of chunks remaining after candidate selection, `n_i` each candidate's byte length, `m` the pattern byte length, and `M` the number of matching chunks.
+
+- Metadata filtering is `O(C)` time and occurs before exact matching.
+- Running either matcher across candidates costs `O(sum(n_i + m))`; each individual invocation remains `O(n_i + m)`.
+- Recording scores is `O(M)` because each score is the already-known offset count.
+- Deterministic sorting is `O(M log M)` time and `O(M)` result storage.
+- Applying top-k after sorting copies/slices at most `O(min(k, M))` result references; the implementation deliberately performs the full sort first.
+
+Frequency-only ranking rewards phrase repetition but does not account for document length, phrase rarity, financial importance, recency, context quality, or semantics. The Python layer still retains normalized chunk text alongside the C++ index. Full-scan fallback can examine the entire collection, no company/year lookup table is maintained, and no benchmark was performed.
+
+Final Step 17 verification passed 56/56 C++ tests and 83/83 Python tests, including 26 exact-search tests. The updated exact-search demonstration and the existing Stage 2 search demonstration both completed successfully. All 48 files under the four data directories retained identical before/after hashes; the recorded hashes for `collection.json`, `preprocessed_collection.json`, and `vocabulary.json` also remained unchanged.

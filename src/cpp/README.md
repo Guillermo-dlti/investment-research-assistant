@@ -117,7 +117,7 @@ For text length `n` and pattern length `m`, search takes `O(n + m)` time. Its co
 
 ## Python Exact Search Integration
 
-`SearchEngine.exact_phrase_search` normalizes a query with the existing Python policy, then calls either the bound C++ KMP or Z-function implementation against stored `normalized_text`. It returns chunk metadata, match count, ascending UTF-8 byte offsets, and the selected algorithm. Optional token-boundary filtering requires the match to span complete tokens according to the existing tokenizer.
+`SearchEngine.exact_phrase_search` normalizes a query with the existing Python policy, then calls either the bound C++ KMP or Z-function implementation against stored `normalized_text`. It returns chunk metadata, match count, ascending UTF-8 byte offsets, selected algorithm, and an occurrence-count score. Results rank by descending score and ascending chunk ID; Python applies optional top-k, ticker, and fiscal-year filters without changing either C++ matcher or the inverted index. Optional token-boundary filtering requires the match to span complete tokens according to the existing tokenizer.
 
 For canonical token phrases in boundary mode, the inverted index first selects chunks containing every unique phrase token. The matcher verifies the exact order and intervening characters. Unbounded substring searches and patterns not identical to their space-joined token sequence scan all chunks, because index filtering could otherwise miss a substring embedded in a larger financial token. The Python layer retains normalized text in memory in addition to the C++ index; this simplifies exact verification but increases memory use. It does not change the inverted-index implementation or term-frequency ranking.
 

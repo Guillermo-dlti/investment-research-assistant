@@ -14,21 +14,28 @@ from src.python.search_engine import (
 
 
 def print_results(label: str, results: list[dict[str, Any]], limit: int = 5) -> None:
-    print(f"{label}: {len(results)} matching chunks")
+    print(f"{label}: {len(results)} returned chunks")
     for result in results[:limit]:
         print(
             f"  {result['chunk_id']} document={result['document_id']} "
             f"ticker={result['ticker']} fiscal_year={result['fiscal_year']} "
-            f"count={result['match_count']} "
+            f"score={result['score']} count={result['match_count']} "
             f"byte_offsets={result['match_byte_offsets']}"
         )
     if not results:
         print("  <no matches>")
 
 
-def comparable(results: list[dict[str, Any]]) -> list[tuple[str, int, list[int]]]:
+def comparable(
+    results: list[dict[str, Any]],
+) -> list[tuple[str, int, int, list[int]]]:
     return [
-        (result["chunk_id"], result["match_count"], result["match_byte_offsets"])
+        (
+            result["chunk_id"],
+            result["score"],
+            result["match_count"],
+            result["match_byte_offsets"],
+        )
         for result in results
     ]
 
@@ -53,13 +60,41 @@ def main() -> int:
     phrase = "artificial intelligence"
     kmp_results = engine.exact_phrase_search(phrase, algorithm="kmp")
     z_results = engine.exact_phrase_search(phrase, algorithm="z")
-    print_results("KMP: artificial intelligence", kmp_results)
+    print_results("Ranked KMP: artificial intelligence", kmp_results)
     print()
-    print_results("Z-function: artificial intelligence", z_results)
-    print(f"Algorithms agree: {comparable(kmp_results) == comparable(z_results)}")
+    print_results("Ranked Z-function: artificial intelligence", z_results)
+    print(
+        "Identical rankings: "
+        f"{comparable(kmp_results) == comparable(z_results)}"
+    )
     print()
 
-    punctuation = engine.exact_phrase_search("$0.001", algorithm="kmp")
+    top_five = engine.exact_phrase_search(phrase, algorithm="kmp", top_k=5)
+    print_results("Top 5", top_five)
+    print()
+    print_results(
+        "Ticker filter: NVDA",
+        engine.exact_phrase_search(phrase, ticker="nvda", top_k=5),
+    )
+    print()
+    print_results(
+        "Fiscal-year filter: 2025",
+        engine.exact_phrase_search(phrase, fiscal_year=2025, top_k=5),
+    )
+    print()
+    print_results(
+        "Combined filter: NVDA FY2025",
+        engine.exact_phrase_search(
+            phrase,
+            algorithm="z",
+            ticker="NVDA",
+            fiscal_year=2025,
+            top_k=5,
+        ),
+    )
+    print()
+
+    punctuation = engine.exact_phrase_search("$0.001", algorithm="kmp", top_k=5)
     print_results("Financial punctuation: $0.001", punctuation)
     print()
     print_results(

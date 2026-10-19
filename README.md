@@ -33,9 +33,9 @@ Financial reports will be collected and converted into clean text. The text will
 
 ## Current Status
 
-**Stage 3 — Exact String Matching: Step 16 complete**
+**Stage 3 — Exact String Matching: Step 17 complete**
 
-Stage 2 is complete and validated. Stage 3 now includes C++17 implementations of Knuth-Morris-Pratt and the Z-function plus Python bindings and exact phrase retrieval over normalized financial chunks. Approximate and similarity matching, AI integration, and the user interface remain unimplemented.
+Stage 2 is complete and validated. Stage 3 now includes C++17 implementations of Knuth-Morris-Pratt and the Z-function plus Python bindings, ranked exact phrase retrieval, top-k selection, and optional ticker/year filtering over normalized financial chunks. Approximate and similarity matching, AI integration, and the user interface remain unimplemented.
 
 ## Development Setup
 
@@ -267,7 +267,7 @@ cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 ```
 
-For text length `n` bytes and pattern length `m` bytes, LPS construction is `O(m)`, searching is `O(n)`, and the combined operation is `O(n + m)`. The LPS table requires `O(m)` auxiliary space; the returned positions require `O(z)` output space for `z` matches. KMP is exposed through `investment_engine` but is not used for ranking.
+For text length `n` bytes and pattern length `m` bytes, LPS construction is `O(m)`, searching is `O(n)`, and the combined operation is `O(n + m)`. The LPS table requires `O(m)` auxiliary space; the returned positions require `O(z)` output space for `z` matches. KMP is exposed through `investment_engine`; Python ranks exact-search results from its returned occurrence count without changing the algorithm or Stage 2 ranking.
 
 ## Z-function Exact Matching
 
@@ -287,13 +287,15 @@ cmake --build build --parallel
 ctest --test-dir build -L z_function --output-on-failure
 ```
 
-For `n` text bytes and `m` pattern bytes, Z-array construction is linear in its input length and a search takes `O(n + m)` time. This implementation requires `O(n + m)` auxiliary space for the combined integer sequence and its Z-array, plus `O(z)` for `z` returned positions; counting does not allocate the positions. KMP has the same `O(n + m)` search bound but needs only `O(m)` auxiliary space for its LPS table. Conceptually, KMP uses pattern fallback information after mismatches, whereas the Z-function reuses prefix matches within its Z-box. The Z-function is exposed through `investment_engine` but is not used for ranking.
+For `n` text bytes and `m` pattern bytes, Z-array construction is linear in its input length and a search takes `O(n + m)` time. This implementation requires `O(n + m)` auxiliary space for the combined integer sequence and its Z-array, plus `O(z)` for `z` returned positions; counting does not allocate the positions. KMP has the same `O(n + m)` search bound but needs only `O(m)` auxiliary space for its LPS table. Conceptually, KMP uses pattern fallback information after mismatches, whereas the Z-function reuses prefix matches within its Z-box. The Z-function is exposed through `investment_engine`; Python applies the same occurrence-count ranking to its exact-search results.
 
 ## Python Exact Phrase Search
 
-`SearchEngine.exact_phrase_search(query, algorithm="kmp", token_boundaries=True)` searches each chunk's stored `normalized_text`. The query is processed with the existing NFKC, punctuation canonicalization, case-folding, and whitespace policy; the chunk data is not re-normalized or changed. Results contain `chunk_id`, `document_id`, `ticker`, `fiscal_year`, `match_count`, `match_byte_offsets`, and the canonical algorithm name (`kmp` or `z`). Offsets count UTF-8 bytes in `normalized_text`, not Python characters, original filing bytes, or joined tokens.
+`SearchEngine.exact_phrase_search(query, algorithm="kmp", token_boundaries=True, ticker=None, fiscal_year=None, top_k=None)` searches each chunk's stored `normalized_text`. The query is processed with the existing NFKC, punctuation canonicalization, case-folding, and whitespace policy; the chunk data is not re-normalized or changed. Results contain `chunk_id`, `document_id`, `ticker`, `fiscal_year`, `match_count`, `match_byte_offsets`, the canonical algorithm name (`kmp` or `z`), and `score`. Offsets count UTF-8 bytes in `normalized_text`, not Python characters, original filing bytes, or joined tokens.
 
-With token boundaries enabled, a match must begin at a tokenizer token start and end at a tokenizer token end, preventing `ai` from matching inside `paid` or `ai-powered`. When the normalized query is exactly its tokens joined by single spaces, the inverted index first applies AND retrieval over the unique query tokens; exact C++ matching then verifies those candidates. If token boundaries are disabled or the query cannot be proven equivalent to that token sequence, the engine scans every chunk. This fallback preserves substring and punctuation correctness when an index token could differ from the requested pattern. Results are ordered by chunk ID, and neither path changes ranking.
+With token boundaries enabled, a match must begin at a tokenizer token start and end at a tokenizer token end, preventing `ai` from matching inside `paid` or `ai-powered`. When the normalized query is exactly its tokens joined by single spaces, the inverted index first applies AND retrieval over the unique query tokens; exact C++ matching then verifies those candidates. If token boundaries are disabled or the query cannot be proven equivalent to that token sequence, the engine scans every chunk. This fallback preserves substring and punctuation correctness when an index token could differ from the requested pattern.
+
+Exact results use the deliberately simple score `score(chunk, query) = exact phrase occurrences in the chunk`, which is also the returned `match_count`. Results sort by descending score and then ascending chunk ID. `top_k` is applied after this ordering; `None` returns every match, zero returns none, values larger than the result count return all matches, and negative values raise `ValueError`. Optional `ticker` and `fiscal_year` filters use stored chunk metadata and run before C++ matching. Ticker comparison is case-insensitive, unknown tickers return no results, and either filter can be used independently or together. These options do not modify Stage 2 ranking.
 
 Run the real-data demonstration and the exact-search tests:
 
@@ -302,7 +304,9 @@ PYTHONPATH=build/python .venv/bin/python -m src.python.exact_search_demo
 PYTHONPATH=build/python .venv/bin/python -m pytest tests/test_exact_search.py -q
 ```
 
-The verified demonstration found `artificial intelligence` in 30 chunks with identical KMP and Z-function results. In stored `normalized_text`, chunk `NVDA_2024_10K_0009` contains the phrase at byte offset 468. The earlier C++ demo offset 461 refers to a different representation—normalized tokens reconstructed with single spaces. The punctuation query `$0.001` matched four real chunks, including two occurrences in each Alphabet chunk and one in each NVIDIA chunk shown by the demo.
+The verified demonstration found `artificial intelligence` in 30 chunks with identical KMP and Z-function rankings. `GOOGL_2025_10K_0067` ranked first with score 2 and byte offsets `[723, 1000]`; other displayed results scored 1. Combined `ticker="NVDA"` and `fiscal_year=2025` filtering returned `NVDA_2025_10K_0009` at `[468]` and `NVDA_2025_10K_0121` at `[397]`. The earlier standalone C++ demo offset 461 refers to a different representation—normalized tokens reconstructed with single spaces. The punctuation query `$0.001` ranked the two Alphabet chunks first with score 2, followed by two NVIDIA chunks with score 1.
+
+If `C` chunks survive candidate and metadata filtering, their byte lengths are `n_i`, the pattern has `m` bytes, and `M` chunks match, invoking either exact matcher across the candidates costs `O(sum(n_i + m))`. This does not change the `O(n_i + m)` complexity of an individual KMP or Z-function call. Metadata filtering costs `O(C)`, collecting scores costs `O(M)`, sorting costs `O(M log M)`, and slicing a top-k prefix costs `O(min(k, M))` after the full deterministic sort. Frequency-only ranking does not measure relevance, term rarity, document length, recency, or semantic meaning; no TF-IDF or BM25 behavior is implied.
 
 ## Disclaimer
 
