@@ -92,7 +92,7 @@ void JaccardIndex::addChunk(
     const std::string& chunk_id,
     const std::vector<std::string>& tokens
 ) {
-    if (!chunk_ids_.insert(chunk_id).second) {
+    if (!positions_.emplace(chunk_id, chunks_.size()).second) {
         throw std::invalid_argument("duplicate chunk ID: " + chunk_id);
     }
     chunks_.emplace_back(chunk_id, wordNgrams(tokens, min_n_, max_n_));
@@ -131,6 +131,31 @@ std::vector<JaccardResult> JaccardIndex::rank(
     });
     if (top_k && results.size() > *top_k) {
         results.resize(*top_k);
+    }
+    return results;
+}
+
+std::vector<JaccardResult> JaccardIndex::scoreChunks(
+    const std::vector<std::string>& chunk_ids,
+    const std::vector<std::string>& query_tokens
+) const {
+    const NgramSet query = wordNgrams(query_tokens, min_n_, max_n_);
+    std::vector<JaccardResult> results;
+    results.reserve(chunk_ids.size());
+    for (const std::string& chunk_id : chunk_ids) {
+        const auto position = positions_.find(chunk_id);
+        if (position == positions_.end()) {
+            throw std::invalid_argument("unknown chunk ID: " + chunk_id);
+        }
+        const NgramSet& grams = chunks_[position->second].second;
+        const std::size_t shared = sharedCount(query, grams);
+        const std::size_t union_size = query.size() + grams.size() - shared;
+        results.push_back({
+            chunk_id,
+            union_size == 0 ? 0.0 : static_cast<double>(shared) / static_cast<double>(union_size),
+            shared,
+            union_size,
+        });
     }
     return results;
 }

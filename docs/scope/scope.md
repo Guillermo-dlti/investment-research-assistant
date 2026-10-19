@@ -18,7 +18,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | 4 | Exact search with KMP and Z function (Stage 3) | Foundation | existing |
 | 5 | Levenshtein fuzzy term matching | Slice 1: Stage 4 | in-progress |
 | 6 | N gram Jaccard similarity | Slice 1: Stage 4 | in-progress |
-| 7 | Approximate retrieval and reranking | Slice 1: Stage 4 | planned |
+| 7 | Approximate retrieval and reranking | Slice 1: Stage 4 | in-progress |
 | 8 | Context selection | Slice 2: Stage 5 | planned |
 | 9 | Language model answers | Slice 2: Stage 5 | planned |
 | 10 | Twenty question run | Slice 2: Stage 5 | planned |
@@ -65,10 +65,18 @@ C++ n gram sets and Jaccard similarity to score how close a query is to each chu
 - [ ] Test it: `/test n gram jaccard similarity`
 Spec [0002](../specs/0002-ngram-jaccard-similarity.md) · code in `src/cpp/ngram_jaccard.*`, `src/python/search_engine.py`
 
-### 7. Approximate retrieval and reranking · needs a decision
+### 7. Approximate retrieval and reranking · in-progress
 Adds an approximate search mode to `SearchEngine` that uses features 5 and 6 to score chunks again and return a new order, without breaking exact search.
 **Done when:** the same question returns an exact ranking and an approximate ranking with scores and timings; a typo query that exact search misses is found by approximate search.
-- [ ] Design it (spec): `/architect approximate retrieval and reranking`
+- [x] Design it (spec): `/architect approximate retrieval and reranking`
+- [x] Build it: `/develop approximate retrieval and reranking`
+   - [x] C++ `approximate_rerank` module plus `JaccardIndex::scoreChunks`, with CTests, a demo and bindings (AC-3, AC-4, AC-7, AC-8, AC-9)
+   - [x] `SearchEngine.approximate_search` with stopwords, corrections, OR candidates and filters, with Python tests (AC-2, AC-4, AC-5, AC-6, AC-7)
+   - [x] `SearchEngine.compare_search` with timings and candidate counts, plus a full regression run (AC-1, AC-6, AC-8)
+   - [x] Python demo and `reports/stage4_notes.md` evidence (AC-10)
+- [ ] Verify it: `/check verify approximate retrieval and reranking`
+- [ ] Test it: `/test approximate retrieval and reranking`
+Spec [0003](../specs/0003-approximate-retrieval-reranking.md) · code in `src/cpp/approximate_rerank.*`, `src/python/search_engine.py`
 
 ## Slice 2: Stage 5, answers from a language model
 

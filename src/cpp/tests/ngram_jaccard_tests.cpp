@@ -108,6 +108,21 @@ void indexValidation() {
     expect(throwsInvalidArgument([&index] { index.addChunk("C1", {"b"}); }), "duplicate ID rejected");
 }
 
+void indexScoreChunks() {
+    const JaccardIndex index = sampleIndex();
+    const auto results = index.scoreChunks({"C3", "C1", "C2"}, {"nvidia", "revenue"});
+    expect(ids(results) == std::vector<std::string>({"C3", "C1", "C2"}), "input order kept");
+    expect(near(results[0].score, 0.0) && results[0].shared_ngrams == 0, "no overlap kept at 0");
+    expect(results[1].shared_ngrams == 3 && results[1].union_size == 5, "C1 shares 3 of 5");
+    expect(near(results[2].score, 0.2), "C2 scores 0.2, as in rank");
+    expect(index.scoreChunks({}, {"nvidia"}).empty(), "no IDs gives nothing");
+    expect(near(index.scoreChunks({"C1"}, {})[0].score, 0.0), "empty query scores 0");
+}
+void indexScoreChunksUnknown() {
+    const JaccardIndex index = sampleIndex();
+    expect(throwsInvalidArgument([&index] { (void)index.scoreChunks({"C9"}, {"a"}); }), "unknown ID rejected");
+}
+
 }  // namespace
 
 int main(int argc, char* argv[]) {
@@ -117,7 +132,8 @@ int main(int argc, char* argv[]) {
         {"word_range_validation", wordRangeValidation}, {"jaccard_values", jaccardValues},
         {"jaccard_symmetry", jaccardSymmetry}, {"index_ranking", indexRanking},
         {"index_tie_break", indexTieBreak}, {"index_limits", indexLimits},
-        {"index_validation", indexValidation},
+        {"index_validation", indexValidation}, {"index_score_chunks", indexScoreChunks},
+        {"index_score_chunks_unknown", indexScoreChunksUnknown},
     };
     if (argc != 2 || tests.find(argv[1]) == tests.end()) {
         std::cerr << "Usage: ngram_jaccard_tests TEST_NAME\n";

@@ -2,7 +2,7 @@
 
 ## Overview
 
-From scratch C++17 implementations of every algorithm the course grades: Trie, inverted index, KMP, Z function, and next Levenshtein, n grams and Jaccard (Stage 4). They are exposed to Python through one pybind11 module, `investment_engine`.
+From scratch C++17 implementations of every algorithm the course grades: Trie, inverted index, KMP, Z function, and for Stage 4 Levenshtein, n grams with Jaccard, and the approximate reranker that combines them. They are exposed to Python through one pybind11 module, `investment_engine`.
 
 ## Key files
 
@@ -11,6 +11,9 @@ From scratch C++17 implementations of every algorithm the course grades: Trie, i
 | `trie.h/.cpp` | Vocabulary Trie: insert, search, prefix check, autocomplete (feeds the GUI autocomplete bonus) |
 | `inverted_index.h/.cpp` | Token to chunk postings, AND/OR queries, term frequency ranking |
 | `kmp.h/.cpp`, `z_function.h/.cpp` | Exact matching, overlapping matches, byte offsets |
+| `levenshtein.h/.cpp` | Edit distance, bounded distance, `FuzzyMatcher` (closest vocabulary words; spec 0001) |
+| `ngram_jaccard.h/.cpp` | Character and word n grams, Jaccard, `JaccardIndex` (full scan `rank`, per chunk `scoreChunks`; spec 0002) |
+| `approximate_rerank.h/.cpp` | `rerankCandidates`: weighted coverage plus Jaccard scaled by the best candidate (spec 0003) |
 | `json_reader.h/.cpp` | Small standard library JSON reader shared by all loaders |
 | `vocabulary_loader.*`, `preprocessed_collection_loader.*` | Load and validate the generated JSON files |
 | `python_bindings.cpp` | The whole pybind11 surface of `investment_engine` |
@@ -30,5 +33,6 @@ From scratch C++17 implementations of every algorithm the course grades: Trie, i
 - Tests that need real data only register if `data/metadata/vocabulary.json` and `data/processed/preprocessed_collection.json` exist when CMake configures. Regenerate data, then reconfigure.
 - The built `.so` is tied to the exact Python version and CPU; rebuild after changing interpreter.
 - Always pass `-DPython_EXECUTABLE="$PWD/.venv/bin/python"` so pybind11 is found inside `.venv`.
+- When the project path contains a space, `python -m pybind11 --cmakedir` prints it wrapped in quotes and a fresh configure fails to find pybind11. Also pass `-Dpybind11_DIR="$PWD/.venv/lib/python3.14/site-packages/pybind11/share/cmake/pybind11"` (adjust the Python version).
 
 _Drafted by /audit from the repo, worth a quick human pass. Edit freely: once a line stops matching this draft, later runs treat it as curated and will flag rather than overwrite it._

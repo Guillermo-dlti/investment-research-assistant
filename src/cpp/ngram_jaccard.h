@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <optional>
 #include <string>
-#include <unordered_set>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -46,6 +46,13 @@ public:
         std::optional<std::size_t> top_k = std::nullopt
     ) const;
 
+    // One result per chunk ID, in input order, including chunks with no
+    // shared n-gram (score 0). Throws std::invalid_argument for an unknown ID.
+    [[nodiscard]] std::vector<JaccardResult> scoreChunks(
+        const std::vector<std::string>& chunk_ids,
+        const std::vector<std::string>& query_tokens
+    ) const;
+
     [[nodiscard]] std::size_t chunkCount() const;
     [[nodiscard]] std::size_t minN() const;
     [[nodiscard]] std::size_t maxN() const;
@@ -54,7 +61,7 @@ private:
     std::size_t min_n_;
     std::size_t max_n_;
     std::vector<std::pair<std::string, NgramSet>> chunks_;
-    std::unordered_set<std::string> chunk_ids_;
+    std::unordered_map<std::string, std::size_t> positions_;
 };
 
 #endif

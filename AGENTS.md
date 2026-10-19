@@ -28,12 +28,13 @@ python src/python/preprocess_text.py --input data/chunks/collection.json --outpu
 # Build (configure AFTER data exists, so data tests register)
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DPython_EXECUTABLE="$PWD/.venv/bin/python" && cmake --build build --parallel
 
-# Test (expect 56 C++ and 83 Python passing with data present)
+# Test (expect 92 C++ and 109 Python passing with data present)
 ctest --test-dir build --output-on-failure && PYTHONPATH=build/python python -m pytest tests -q
 
 # Demos
 PYTHONPATH=build/python python -m src.python.exact_search_demo
 PYTHONPATH=build/python python -m src.python.search_demo
+PYTHONPATH=build/python python -m src.python.approximate_search_demo  # exact vs approximate, Stage 4 evidence
 ```
 
 ## Specs

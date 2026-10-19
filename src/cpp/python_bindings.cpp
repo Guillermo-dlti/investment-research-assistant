@@ -1,3 +1,4 @@
+#include "approximate_rerank.h"
 #include "inverted_index.h"
 #include "kmp.h"
 #include "levenshtein.h"
@@ -191,10 +192,51 @@ PYBIND11_MODULE(investment_engine, module) {
             py::arg("query_tokens"),
             py::arg("top_k") = py::none()
         )
+        .def(
+            "score_chunks",
+            &JaccardIndex::scoreChunks,
+            py::arg("chunk_ids"),
+            py::arg("query_tokens")
+        )
         .def_property_readonly("chunk_count", &JaccardIndex::chunkCount)
         .def_property_readonly("min_n", &JaccardIndex::minN)
         .def_property_readonly("max_n", &JaccardIndex::maxN);
 
+    py::class_<WeightedTerm>(module, "WeightedTerm")
+        .def(py::init<std::string, double>(), py::arg("term"), py::arg("weight"))
+        .def_readwrite("term", &WeightedTerm::term)
+        .def_readwrite("weight", &WeightedTerm::weight)
+        .def("__repr__", [](const WeightedTerm& term) {
+            return "WeightedTerm(term='" + term.term +
+                   "', weight=" + std::to_string(term.weight) + ")";
+        });
+
+    py::class_<ApproximateResult>(module, "ApproximateResult")
+        .def_readonly("chunk_id", &ApproximateResult::chunk_id)
+        .def_readonly("score", &ApproximateResult::score)
+        .def_readonly("coverage", &ApproximateResult::coverage)
+        .def_readonly("jaccard", &ApproximateResult::jaccard)
+        .def_readonly("jaccard_scaled", &ApproximateResult::jaccard_scaled)
+        .def_readonly("matched_terms", &ApproximateResult::matched_terms)
+        .def("__repr__", [](const ApproximateResult& result) {
+            return "ApproximateResult(chunk_id='" + result.chunk_id +
+                   "', score=" + std::to_string(result.score) +
+                   ", coverage=" + std::to_string(result.coverage) +
+                   ", jaccard_scaled=" + std::to_string(result.jaccard_scaled) + ")";
+        });
+
+    module.def(
+        "rerank_candidates",
+        &rerankCandidates,
+        py::arg("index"),
+        py::arg("jaccard_index"),
+        py::arg("candidate_ids"),
+        py::arg("terms"),
+        py::arg("ngram_tokens"),
+        py::arg("alpha"),
+        py::arg("top_k") = py::none(),
+        "Rerank candidates by alpha * weighted coverage + (1 - alpha) * Jaccard / J_max."
+    );
     module.def(
         "load_trie",
         &loadTrieFromFile,
