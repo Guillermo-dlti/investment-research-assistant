@@ -99,6 +99,22 @@ python src/python/extract_text.py
 
 The extractor writes `data/processed/nvidia_2025.txt` and `data/processed/nvidia_2025.json`.
 
+## Document Chunking
+
+Large financial filings are split into smaller passages so later retrieval stages can work with focused, readable context. The initial strategy targets 250 words per chunk, preserves paragraph or sentence boundaries when practical, and repeats the preceding 40 words to maintain context between consecutive chunks.
+
+Run the chunker from the project root:
+
+```bash
+python src/python/chunk_documents.py \
+  --input data/processed/nvidia_2025.json \
+  --output data/chunks/nvidia_2025_chunks.json \
+  --chunk-size 250 \
+  --overlap 40
+```
+
+The resulting human-readable JSON is stored in `data/chunks/nvidia_2025_chunks.json`. Change `--chunk-size` and `--overlap` to experiment with other valid values; overlap must be smaller than the chunk size.
+
 ## Disclaimer
 
 This application is intended solely for educational and research purposes. It does not provide personalized financial advice, investment recommendations, or a substitute for professional financial guidance.
