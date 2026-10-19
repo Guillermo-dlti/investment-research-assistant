@@ -27,6 +27,7 @@ PreprocessedChunk parseChunk(JsonReader& reader) {
     bool found_document_id = false;
     bool found_ticker = false;
     bool found_fiscal_year = false;
+    bool found_normalized_text = false;
     bool found_tokens = false;
     bool found_token_count = false;
     std::size_t token_count = 0;
@@ -51,6 +52,9 @@ PreprocessedChunk parseChunk(JsonReader& reader) {
             }
             chunk.fiscal_year = static_cast<int>(year);
             found_fiscal_year = true;
+        } else if (key == "normalized_text") {
+            chunk.normalized_text = reader.parseString();
+            found_normalized_text = true;
         } else if (key == "tokens") {
             chunk.tokens = parseTokens(reader);
             found_tokens = true;
@@ -67,10 +71,11 @@ PreprocessedChunk parseChunk(JsonReader& reader) {
     }
 
     if (!found_chunk_id || !found_document_id || !found_ticker ||
-        !found_fiscal_year || !found_tokens) {
+        !found_fiscal_year || !found_normalized_text || !found_tokens) {
         reader.fail("chunk is missing required index metadata");
     }
-    if (chunk.chunk_id.empty() || chunk.document_id.empty() || chunk.ticker.empty()) {
+    if (chunk.chunk_id.empty() || chunk.document_id.empty() ||
+        chunk.ticker.empty() || chunk.normalized_text.empty()) {
         reader.fail("chunk contains empty required metadata");
     }
     if (found_token_count && token_count != chunk.tokens.size()) {

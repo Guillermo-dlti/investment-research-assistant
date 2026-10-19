@@ -192,3 +192,34 @@ Let `C` be the number of chunks remaining after candidate selection, `n_i` each 
 Frequency-only ranking rewards phrase repetition but does not account for document length, phrase rarity, financial importance, recency, context quality, or semantics. The Python layer still retains normalized chunk text alongside the C++ index. Full-scan fallback can examine the entire collection, no company/year lookup table is maintained, and no benchmark was performed.
 
 Final Step 17 verification passed 56/56 C++ tests and 83/83 Python tests, including 26 exact-search tests. The updated exact-search demonstration and the existing Stage 2 search demonstration both completed successfully. All 48 files under the four data directories retained identical before/after hashes; the recorded hashes for `collection.json`, `preprocessed_collection.json`, and `vocabulary.json` also remained unchanged.
+
+## Step 18 Final Evaluation
+
+Step 18 adds the `exact_matching_benchmark` Release executable, machine-readable CSV/JSON results, a matplotlib plotting script, three generated graphs, and the technical report in `reports/stage3_validation.md`. The benchmark uses stored `normalized_text`; the shared C++ collection loader now retains that existing schema field for benchmark input without changing the inverted index.
+
+Seventeen scenarios produced 34 algorithm rows. Every KMP position vector equaled the corresponding Z-function vector before timing. Scenarios covered exact financial-text prefixes of 1,024, 10,240, 51,200, 102,400, and 256,000 bytes; patterns of 2, 7, 23, and 44 bytes; zero, one, multiple, and 102,396 overlapping matches; and four unfiltered full-collection scans over 2,458 chunks and 3,949,059 bytes.
+
+The benchmark used three warm-ups, 11–301 measured repetitions, alternating execution order, and `std::chrono::steady_clock`. Median full-collection times ranged from 4.404 to 4.722 ms for KMP and 7.961 to 8.122 ms for the Z-function. KMP had the lower median in all cases on the recorded Apple M5 Pro/Apple Clang 21 environment, but this is not asserted as a universal performance ordering. The 1 KiB sub-microsecond KMP result and isolated maxima in the 23-byte pattern case illustrate measurement noise.
+
+Theoretical time remains `O(n + m)` for both algorithms. KMP uses `O(m)` auxiliary space, while this Z-function search uses `O(n + m)` for its integer combined sequence and Z-array. No peak runtime memory was measured, so no empirical memory values are reported.
+
+Reproduction commands:
+
+```bash
+.venv/bin/cmake -S . -B build \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DPython_EXECUTABLE="$PWD/.venv/bin/python"
+.venv/bin/cmake --build build --parallel
+.venv/bin/ctest --test-dir build --output-on-failure
+PYTHONPATH=build/python .venv/bin/python -m pytest tests -q
+./build/exact_matching_benchmark \
+  data/processed/preprocessed_collection.json \
+  reports/benchmarks/exact_matching_results.csv \
+  reports/benchmarks/exact_matching_summary.json
+MPLCONFIGDIR=/tmp/investment-research-matplotlib \
+  .venv/bin/python -m src.python.plot_exact_matching_benchmarks
+```
+
+Detailed methodology, results, graphs, limitations, and conclusions are in `reports/stage3_validation.md`. Stage 3 is ready to be considered complete.
+
+Final regression verification passed 56/56 C++ tests and 83/83 Python tests. All existing demonstrations, the benchmark executable, and the graph generator completed successfully. All 48 financial data files retained identical hashes.

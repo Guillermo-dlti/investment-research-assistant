@@ -3,3 +3,4 @@ pybind11>=2.13,<4.0
 pytest>=8.0,<10.0
 cmake>=3.28,<5.0
 beautifulsoup4>=4.12,<5.0
+matplotlib>=3.9,<4.0

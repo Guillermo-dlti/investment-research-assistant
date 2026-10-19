@@ -11,6 +11,7 @@ struct PreprocessedChunk {
     std::string document_id;
     std::string ticker;
     int fiscal_year;
+    std::string normalized_text;
     std::vector<std::string> tokens;
 };
 

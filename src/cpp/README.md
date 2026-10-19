@@ -20,6 +20,7 @@ This directory contains custom C++17 data structures and algorithms for the norm
 - `z_function.h` and `z_function.cpp`: linear Z-array construction, exact search, and match counting.
 - `z_function_demo.cpp`: Z-array, synthetic matching, and real normalized-chunk examples compared with KMP.
 - `tests/z_function_tests.cpp`: seventeen portable Z-function test categories, including fixed-seed KMP comparisons.
+- `exact_matching_benchmark.cpp`: Release benchmark comparing the production KMP and Z-function implementations on synthetic and normalized financial text.
 
 No external Trie or JSON library is used. Nodes own their children with `std::unique_ptr`, and each node uses `std::map<unsigned char, ...>` so traversal is deterministic and bytewise lexicographic.
 
@@ -34,6 +35,10 @@ cmake --build build --parallel
 ./build/inverted_index_demo data/processed/preprocessed_collection.json
 ./build/kmp_demo data/processed/preprocessed_collection.json
 ./build/z_function_demo data/processed/preprocessed_collection.json
+./build/exact_matching_benchmark \
+  data/processed/preprocessed_collection.json \
+  reports/benchmarks/exact_matching_results.csv \
+  reports/benchmarks/exact_matching_summary.json
 PYTHONPATH=build/python python -m src.python.search_demo
 PYTHONPATH=build/python python -m src.python.exact_search_demo
 ctest --test-dir build --output-on-failure
@@ -122,3 +127,9 @@ For text length `n` and pattern length `m`, search takes `O(n + m)` time. Its co
 For canonical token phrases in boundary mode, the inverted index first selects chunks containing every unique phrase token. The matcher verifies the exact order and intervening characters. Unbounded substring searches and patterns not identical to their space-joined token sequence scan all chunks, because index filtering could otherwise miss a substring embedded in a larger financial token. The Python layer retains normalized text in memory in addition to the C++ index; this simplifies exact verification but increases memory use. It does not change the inverted-index implementation or term-frequency ranking.
 
 The Python integration searches stored `normalized_text`, so its offsets can differ from the standalone C++ demos, which join token arrays with spaces. For example, `artificial intelligence` begins at byte 468 in the stored text of `NVDA_2024_10K_0009`, while it begins at byte 461 in that demo's joined-token representation.
+
+## Exact-Matching Benchmark
+
+`exact_matching_benchmark` loads normalized chunk text before timing, calls `kmpSearch` and `zSearch` directly, verifies identical positions, warms both algorithms, alternates execution order, and records multiple `std::chrono::steady_clock` samples. The timed region includes each algorithm's preprocessing and returned position vector, but excludes disk I/O, JSON parsing, index construction, and report output. It writes detailed CSV and JSON results under `reports/benchmarks/`.
+
+The benchmark must use a Release build. On the recorded Apple M5 Pro run, full unfiltered scans of 2,458 chunks and 3,949,059 bytes took median times of 4.667 ms for KMP and 7.977 ms for the Z-function when searching for `artificial intelligence`. These measurements are environment-specific. No peak-memory measurement was performed; theoretical auxiliary memory remains `O(m)` for KMP and `O(n + m)` for this Z-function implementation.

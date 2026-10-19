@@ -33,9 +33,9 @@ Financial reports will be collected and converted into clean text. The text will
 
 ## Current Status
 
-**Stage 3 — Exact String Matching: Step 17 complete**
+**Stage 3 — Exact String Matching: complete (Steps 14–18)**
 
-Stage 2 is complete and validated. Stage 3 now includes C++17 implementations of Knuth-Morris-Pratt and the Z-function plus Python bindings, ranked exact phrase retrieval, top-k selection, and optional ticker/year filtering over normalized financial chunks. Approximate and similarity matching, AI integration, and the user interface remain unimplemented.
+Stage 2 and Stage 3 are complete and validated. Stage 3 includes C++17 implementations of Knuth-Morris-Pratt and the Z-function, Python bindings, ranked exact phrase retrieval, top-k selection, optional ticker/year filtering, and reproducible Release benchmarks. Approximate and similarity matching, AI integration, and the user interface remain unimplemented.
 
 ## Development Setup
 
@@ -307,6 +307,27 @@ PYTHONPATH=build/python .venv/bin/python -m pytest tests/test_exact_search.py -q
 The verified demonstration found `artificial intelligence` in 30 chunks with identical KMP and Z-function rankings. `GOOGL_2025_10K_0067` ranked first with score 2 and byte offsets `[723, 1000]`; other displayed results scored 1. Combined `ticker="NVDA"` and `fiscal_year=2025` filtering returned `NVDA_2025_10K_0009` at `[468]` and `NVDA_2025_10K_0121` at `[397]`. The earlier standalone C++ demo offset 461 refers to a different representation—normalized tokens reconstructed with single spaces. The punctuation query `$0.001` ranked the two Alphabet chunks first with score 2, followed by two NVIDIA chunks with score 1.
 
 If `C` chunks survive candidate and metadata filtering, their byte lengths are `n_i`, the pattern has `m` bytes, and `M` chunks match, invoking either exact matcher across the candidates costs `O(sum(n_i + m))`. This does not change the `O(n_i + m)` complexity of an individual KMP or Z-function call. Metadata filtering costs `O(C)`, collecting scores costs `O(M)`, sorting costs `O(M log M)`, and slicing a top-k prefix costs `O(min(k, M))` after the full deterministic sort. Frequency-only ranking does not measure relevance, term rarity, document length, recency, or semantic meaning; no TF-IDF or BM25 behavior is implied.
+
+## Stage 3 Evaluation and Benchmarks
+
+The Release benchmark calls the production KMP and Z-function implementations directly. It verifies position-vector equivalence before timing, performs warm-ups, alternates algorithm order, and reports median, mean, minimum, and maximum execution time. Loading, JSON parsing, Python startup, and index construction are excluded. Scenarios cover 1–250 KiB financial-text prefixes, four pattern lengths, four match distributions, and unfiltered scans of all 2,458 normalized chunks.
+
+Reproduce the benchmark and graphs from the project root:
+
+```bash
+.venv/bin/cmake -S . -B build \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DPython_EXECUTABLE="$PWD/.venv/bin/python"
+.venv/bin/cmake --build build --parallel
+./build/exact_matching_benchmark \
+  data/processed/preprocessed_collection.json \
+  reports/benchmarks/exact_matching_results.csv \
+  reports/benchmarks/exact_matching_summary.json
+MPLCONFIGDIR=/tmp/investment-research-matplotlib \
+  .venv/bin/python -m src.python.plot_exact_matching_benchmarks
+```
+
+On the verified Apple M5 Pro environment, KMP had the lower median in all 17 scenarios. For the 3,949,059-byte full collection, `artificial intelligence` produced 31 raw substring matches with medians of 4.667 ms for KMP and 7.977 ms for the Z-function. These are environment-specific empirical results, not a general guarantee. See [the Stage 3 validation report](reports/stage3_validation.md), [raw CSV](reports/benchmarks/exact_matching_results.csv), and [JSON summary](reports/benchmarks/exact_matching_summary.json).
 
 ## Disclaimer
 

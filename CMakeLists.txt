@@ -61,6 +61,22 @@ target_link_libraries(kmp_demo PRIVATE kmp_core inverted_index_core)
 add_executable(z_function_demo src/cpp/z_function_demo.cpp)
 target_link_libraries(z_function_demo PRIVATE z_function_core kmp_core inverted_index_core)
 
+add_executable(exact_matching_benchmark src/cpp/exact_matching_benchmark.cpp)
+target_link_libraries(
+    exact_matching_benchmark
+    PRIVATE kmp_core z_function_core inverted_index_core
+)
+target_compile_definitions(
+    exact_matching_benchmark
+    PRIVATE BENCHMARK_BUILD_TYPE="${CMAKE_BUILD_TYPE}"
+)
+if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+    target_compile_options(
+        exact_matching_benchmark
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
 pybind11_add_module(investment_engine MODULE src/cpp/python_bindings.cpp)
 target_link_libraries(
     investment_engine

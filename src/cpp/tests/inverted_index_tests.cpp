@@ -178,6 +178,10 @@ void realCollectionLoading(const std::filesystem::path& path) {
     const PreprocessedCollection collection = loadPreprocessedCollection(path);
     expect(collection.declared_total_chunks == 2458, "real collection should declare 2,458 chunks");
     expect(collection.chunks.size() == 2458, "real collection loader should return 2,458 chunks");
+    expect(
+        !collection.chunks.front().normalized_text.empty(),
+        "real collection loader should retain normalized text"
+    );
 
     InvertedIndex index;
     for (const PreprocessedChunk& chunk : collection.chunks) {
