@@ -33,9 +33,9 @@ Financial reports will be collected and converted into clean text. The text will
 
 ## Current Status
 
-**Stage 3 — Exact String Matching: Step 15 complete**
+**Stage 3 — Exact String Matching: Step 16 complete**
 
-Stage 2 is complete and validated. Stage 3 now includes standalone C++17 implementations of Knuth-Morris-Pratt and the Z-function for exact byte-string matching. Neither exact matcher is exposed through Python yet; approximate and similarity matching, AI integration, and the user interface remain unimplemented.
+Stage 2 is complete and validated. Stage 3 now includes C++17 implementations of Knuth-Morris-Pratt and the Z-function plus Python bindings and exact phrase retrieval over normalized financial chunks. Approximate and similarity matching, AI integration, and the user interface remain unimplemented.
 
 ## Development Setup
 
@@ -216,7 +216,9 @@ The reusable collection loader reads only the preprocessed fields needed by the 
 
 ## Python/C++ Integration
 
-The `investment_engine` extension exposes the existing C++ Trie and inverted index through pybind11; it does not reimplement their algorithms in Python. The binding provides `Trie`, `InvertedIndex`, ranked result objects, and C++ factory functions for loading the generated vocabulary and preprocessed collection. `src/python/search_engine.py` is a thin convenience layer that reuses the Step 9 `normalize_text()` and `tokenize()` functions for queries and attaches the metadata already stored by the C++ index.
+The `investment_engine` extension exposes the C++ Trie, inverted index, KMP, and Z-function through pybind11; it does not reimplement their algorithms in Python. The binding provides `Trie`, `InvertedIndex`, ranked result objects, C++ factory functions for loading generated data, and the functions `compute_lps`, `kmp_search`, `kmp_count`, `compute_z`, `z_search`, and `z_count`. Direct exact-matching calls accept Python strings and return zero-based UTF-8 byte offsets. The length-aware pybind11 conversion preserves embedded NUL characters, as verified by the integration tests.
+
+`src/python/search_engine.py` reuses the Step 9 `normalize_text()` and `tokenize()` functions for queries and attaches metadata stored by the C++ index. Existing Trie, Boolean retrieval, and term-frequency ranking behavior is unchanged.
 
 Activate `.venv`, then configure CMake with that exact interpreter and build:
 
@@ -244,7 +246,7 @@ ctest --test-dir build --output-on-failure
 PYTHONPATH=build/python python -m pytest tests -q
 ```
 
-Direct binding calls expect normalized tokens. The `SearchEngine` wrapper accepts ordinary user query strings and applies the existing Python preprocessing rules before calling C++. Autocomplete normalizes case, Unicode punctuation, and whitespace but intentionally keeps the supplied text as a prefix instead of tokenizing it as a complete term.
+Direct Trie and index calls expect normalized tokens, while direct exact-matcher calls compare their strings unchanged. The `SearchEngine` wrapper accepts ordinary user query strings and applies the existing Python preprocessing rules before calling C++. Autocomplete normalizes case, Unicode punctuation, and whitespace but intentionally keeps the supplied text as a prefix instead of tokenizing it as a complete term.
 
 The build discovers pybind11 through the selected Python interpreter using `python -m pybind11 --cmakedir`; no system-wide installation or hardcoded package path is used. Python 3.14.7, pybind11 3.1.0, CMake 4.4.4, and Apple Clang 21 were verified. Python/UTF-8 string conversion and conversion of vectors, dictionaries, and ranked results add boundary overhead proportional to the transferred input and output sizes, but do not change the underlying algorithms' theoretical complexity.
 
@@ -265,7 +267,7 @@ cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 ```
 
-For text length `n` bytes and pattern length `m` bytes, LPS construction is `O(m)`, searching is `O(n)`, and the combined operation is `O(n + m)`. The LPS table requires `O(m)` auxiliary space; the returned positions require `O(z)` output space for `z` matches. KMP has not been added to `investment_engine` and is not used for ranking.
+For text length `n` bytes and pattern length `m` bytes, LPS construction is `O(m)`, searching is `O(n)`, and the combined operation is `O(n + m)`. The LPS table requires `O(m)` auxiliary space; the returned positions require `O(z)` output space for `z` matches. KMP is exposed through `investment_engine` but is not used for ranking.
 
 ## Z-function Exact Matching
 
@@ -285,7 +287,22 @@ cmake --build build --parallel
 ctest --test-dir build -L z_function --output-on-failure
 ```
 
-For `n` text bytes and `m` pattern bytes, Z-array construction is linear in its input length and a search takes `O(n + m)` time. This implementation requires `O(n + m)` auxiliary space for the combined integer sequence and its Z-array, plus `O(z)` for `z` returned positions; counting does not allocate the positions. KMP has the same `O(n + m)` search bound but needs only `O(m)` auxiliary space for its LPS table. Conceptually, KMP uses pattern fallback information after mismatches, whereas the Z-function reuses prefix matches within its Z-box. The Z-function is not exposed by `investment_engine` and is not used for ranking.
+For `n` text bytes and `m` pattern bytes, Z-array construction is linear in its input length and a search takes `O(n + m)` time. This implementation requires `O(n + m)` auxiliary space for the combined integer sequence and its Z-array, plus `O(z)` for `z` returned positions; counting does not allocate the positions. KMP has the same `O(n + m)` search bound but needs only `O(m)` auxiliary space for its LPS table. Conceptually, KMP uses pattern fallback information after mismatches, whereas the Z-function reuses prefix matches within its Z-box. The Z-function is exposed through `investment_engine` but is not used for ranking.
+
+## Python Exact Phrase Search
+
+`SearchEngine.exact_phrase_search(query, algorithm="kmp", token_boundaries=True)` searches each chunk's stored `normalized_text`. The query is processed with the existing NFKC, punctuation canonicalization, case-folding, and whitespace policy; the chunk data is not re-normalized or changed. Results contain `chunk_id`, `document_id`, `ticker`, `fiscal_year`, `match_count`, `match_byte_offsets`, and the canonical algorithm name (`kmp` or `z`). Offsets count UTF-8 bytes in `normalized_text`, not Python characters, original filing bytes, or joined tokens.
+
+With token boundaries enabled, a match must begin at a tokenizer token start and end at a tokenizer token end, preventing `ai` from matching inside `paid` or `ai-powered`. When the normalized query is exactly its tokens joined by single spaces, the inverted index first applies AND retrieval over the unique query tokens; exact C++ matching then verifies those candidates. If token boundaries are disabled or the query cannot be proven equivalent to that token sequence, the engine scans every chunk. This fallback preserves substring and punctuation correctness when an index token could differ from the requested pattern. Results are ordered by chunk ID, and neither path changes ranking.
+
+Run the real-data demonstration and the exact-search tests:
+
+```bash
+PYTHONPATH=build/python .venv/bin/python -m src.python.exact_search_demo
+PYTHONPATH=build/python .venv/bin/python -m pytest tests/test_exact_search.py -q
+```
+
+The verified demonstration found `artificial intelligence` in 30 chunks with identical KMP and Z-function results. In stored `normalized_text`, chunk `NVDA_2024_10K_0009` contains the phrase at byte offset 468. The earlier C++ demo offset 461 refers to a different representation—normalized tokens reconstructed with single spaces. The punctuation query `$0.001` matched four real chunks, including two occurrences in each Alphabet chunk and one in each NVIDIA chunk shown by the demo.
 
 ## Disclaimer
 

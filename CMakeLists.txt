@@ -62,7 +62,10 @@ add_executable(z_function_demo src/cpp/z_function_demo.cpp)
 target_link_libraries(z_function_demo PRIVATE z_function_core kmp_core inverted_index_core)
 
 pybind11_add_module(investment_engine MODULE src/cpp/python_bindings.cpp)
-target_link_libraries(investment_engine PRIVATE trie_core inverted_index_core)
+target_link_libraries(
+    investment_engine
+    PRIVATE trie_core inverted_index_core kmp_core z_function_core
+)
 set_target_properties(
     investment_engine
     PROPERTIES

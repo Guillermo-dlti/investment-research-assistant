@@ -1,7 +1,9 @@
 #include "inverted_index.h"
+#include "kmp.h"
 #include "preprocessed_collection_loader.h"
 #include "trie.h"
 #include "vocabulary_loader.h"
+#include "z_function.h"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -55,7 +57,7 @@ py::object metadataAsPython(
 
 PYBIND11_MODULE(investment_engine, module) {
     module.doc() =
-        "Python bindings for the C++17 Trie and chunk-level inverted index.";
+        "Python bindings for the C++17 retrieval and exact-matching algorithms.";
 
     py::class_<Trie>(module, "Trie")
         .def(py::init<>())
@@ -131,5 +133,45 @@ PYBIND11_MODULE(investment_engine, module) {
         &loadIndexFromFile,
         py::arg("collection_path"),
         "Load the preprocessed collection and construct the C++ index."
+    );
+    module.def(
+        "compute_lps",
+        &computeLps,
+        py::arg("pattern"),
+        "Build the KMP longest-prefix/suffix table for UTF-8 bytes."
+    );
+    module.def(
+        "kmp_search",
+        &kmpSearch,
+        py::arg("text"),
+        py::arg("pattern"),
+        "Return zero-based byte offsets of all KMP matches."
+    );
+    module.def(
+        "kmp_count",
+        &kmpCount,
+        py::arg("text"),
+        py::arg("pattern"),
+        "Count all KMP matches without returning their offsets."
+    );
+    module.def(
+        "compute_z",
+        &computeZ,
+        py::arg("text"),
+        "Build the Z-array for UTF-8 bytes with Z[0] equal to zero."
+    );
+    module.def(
+        "z_search",
+        &zSearch,
+        py::arg("text"),
+        py::arg("pattern"),
+        "Return zero-based byte offsets of all Z-function matches."
+    );
+    module.def(
+        "z_count",
+        &zCount,
+        py::arg("text"),
+        py::arg("pattern"),
+        "Count all Z-function matches without returning their offsets."
     );
 }

@@ -13,7 +13,7 @@ This directory contains custom C++17 data structures and algorithms for the norm
 - `inverted_index_demo.cpp`: indexes the real preprocessed collection and demonstrates retrieval and ranking.
 - `tests/inverted_index_tests.cpp`: eleven portable tests and one local real-collection integration test.
 - `json_reader.h` and `json_reader.cpp`: the shared standard-library-only JSON reader used by both loaders.
-- `python_bindings.cpp`: pybind11 definitions for the existing Trie, inverted index, metadata, rankings, and C++ file loaders.
+- `python_bindings.cpp`: pybind11 definitions for the Trie, inverted index, KMP, Z-function, metadata, rankings, and C++ file loaders.
 - `kmp.h` and `kmp.cpp`: LPS construction, exact KMP search, and match counting.
 - `kmp_demo.cpp`: synthetic and real normalized-chunk matching examples.
 - `tests/kmp_tests.cpp`: fifteen portable KMP test cases.
@@ -35,6 +35,7 @@ cmake --build build --parallel
 ./build/kmp_demo data/processed/preprocessed_collection.json
 ./build/z_function_demo data/processed/preprocessed_collection.json
 PYTHONPATH=build/python python -m src.python.search_demo
+PYTHONPATH=build/python python -m src.python.exact_search_demo
 ctest --test-dir build --output-on-failure
 ```
 
@@ -82,12 +83,14 @@ The module exposes:
 - `InvertedIndex`: `add_chunk`, `lookup`, `and_query`, `or_query`, term/document frequency, ranked AND/OR, metadata, chunk count, and vocabulary size.
 - `RankedChunk`: read-only `chunk_id` and `score` fields.
 - `load_trie(path)` and `load_inverted_index(path)`: factories backed by the existing C++ JSON loaders.
+- `compute_lps`, `kmp_search`, and `kmp_count`: direct calls to the C++ KMP implementation.
+- `compute_z`, `z_search`, and `z_count`: direct calls to the C++ Z-function implementation.
 
-Python strings are encoded as UTF-8 by pybind11 and remain subject to the C++ components' byte-oriented behavior. Direct calls must provide tokens normalized by Step 9. The Python `SearchEngine` wrapper reuses the existing preprocessing functions when accepting raw query text.
+Python strings are converted to length-aware UTF-8 `std::string` values by pybind11 and remain subject to the C++ components' byte-oriented behavior. Embedded NUL characters are preserved. Direct exact-matcher calls do not normalize input; the Python `SearchEngine` wrapper applies the existing preprocessing functions when accepting raw query text.
 
 Interop converts Python strings and token lists into C++ values and copies C++ result vectors back into Python objects. For input size `I` and returned data size `O`, this adds approximately `O(I + O)` conversion work and corresponding temporary allocations. It does not change Trie lookup, postings intersection/union, or ranking complexity. Fine-grained calls can incur noticeable fixed interpreter-boundary overhead even when the C++ operation is small.
 
-The extension has no stable binary compatibility across unrelated Python versions; rebuild it with the exact interpreter that will import it. The verified environment used Python 3.14.7 with pybind11 3.1.0 and Apple Clang 21. KMP and the Z-function remain standalone C++ targets and are not part of the module; approximate matching, AI integration, and the frontend are also absent.
+The extension has no stable binary compatibility across unrelated Python versions; rebuild it with the exact interpreter that will import it. The verified environment used Python 3.14.7 with pybind11 3.1.0 and Apple Clang 21. Approximate matching, AI integration, and the frontend remain absent.
 
 ## KMP Exact Matching
 
@@ -111,3 +114,11 @@ ctest --test-dir build -L z_function --output-on-failure
 ```
 
 For text length `n` and pattern length `m`, search takes `O(n + m)` time. Its combined sequence and Z-array require `O(n + m)` auxiliary space, with another `O(z)` when returning `z` positions. A direct Z-array for a sequence of length `n` takes `O(n)` time and space. KMP provides the same `O(n + m)` total time but uses an `O(m)` LPS table instead of materializing the combined input and Z-array. KMP responds to mismatches using prefix/suffix fallback lengths; the Z-function reuses known prefix matches inside its Z-box. Both demos agree on the synthetic examples and find `artificial intelligence` in real normalized chunk `NVDA_2024_10K_0009` at byte offset 461.
+
+## Python Exact Search Integration
+
+`SearchEngine.exact_phrase_search` normalizes a query with the existing Python policy, then calls either the bound C++ KMP or Z-function implementation against stored `normalized_text`. It returns chunk metadata, match count, ascending UTF-8 byte offsets, and the selected algorithm. Optional token-boundary filtering requires the match to span complete tokens according to the existing tokenizer.
+
+For canonical token phrases in boundary mode, the inverted index first selects chunks containing every unique phrase token. The matcher verifies the exact order and intervening characters. Unbounded substring searches and patterns not identical to their space-joined token sequence scan all chunks, because index filtering could otherwise miss a substring embedded in a larger financial token. The Python layer retains normalized text in memory in addition to the C++ index; this simplifies exact verification but increases memory use. It does not change the inverted-index implementation or term-frequency ranking.
+
+The Python integration searches stored `normalized_text`, so its offsets can differ from the standalone C++ demos, which join token arrays with spaces. For example, `artificial intelligence` begins at byte 468 in the stored text of `NVDA_2024_10K_0009`, while it begins at byte 461 in that demo's joined-token representation.
