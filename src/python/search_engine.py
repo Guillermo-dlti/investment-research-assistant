@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import time
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +20,18 @@ EXACT_ALGORITHMS = {
     "z-function": ("z", investment_engine.z_search),
     "z_function": ("z", investment_engine.z_search),
 }
+# Dropped in approximate mode only. "may" and "us" are left out on purpose:
+# in 10-K filings they can be content (the month May, U.S.).
+STOPWORDS = frozenset(
+    """
+    a about after all also an and any are as at be been being but by can could
+    did do does each for from had has have how i if in into is it its me might
+    more most my no not of on or our so such than that the their them then there
+    these they this those to was we were what when where which who whom whose
+    why will with would you your
+    """.split()
+)
+DEFAULT_ALPHA = 0.6
 
 
 def normalize_query(query: str) -> list[str]:
@@ -45,6 +58,7 @@ class SearchEngine:
         self.trie = investment_engine.load_trie(str(vocabulary_path))
         self.fuzzy_matcher = investment_engine.load_fuzzy_matcher(str(vocabulary_path))
         self.index = investment_engine.load_inverted_index(str(collection_path))
+        self.jaccard_index = investment_engine.load_jaccard_index(str(collection_path))
         self._normalized_chunks = self._load_normalized_chunks(collection_path)
 
     @property
@@ -97,23 +111,7 @@ class SearchEngine:
         Tokens with no vocabulary word within the cutoff are kept unchanged
         with ``distance`` set to ``None``.
         """
-        corrections: list[dict[str, Any]] = []
-        for token in normalize_query(query):
-            if any(character.isdigit() for character in token):
-                corrections.append({"original": token, "corrected": token, "distance": None})
-                continue
-            matches = self.fuzzy_matcher.match(token, 1, None)
-            if matches:
-                corrections.append(
-                    {
-                        "original": token,
-                        "corrected": matches[0].word,
-                        "distance": matches[0].distance,
-                    }
-                )
-            else:
-                corrections.append({"original": token, "corrected": token, "distance": None})
-        return corrections
+        return [self._correct_token(token) for token in normalize_query(query)]
 
     def single_token_search(self, query: str) -> list[dict[str, Any]]:
         token = normalize_single_token(query)
@@ -227,6 +225,283 @@ class SearchEngine:
                 )
         results.sort(key=lambda result: (-result["score"], result["chunk_id"]))
         return results if top_k is None else results[:top_k]
+
+    def jaccard_search(
+        self,
+        query: str,
+        *,
+        ticker: str | None = None,
+        fiscal_year: int | None = None,
+        top_k: int | None = None,
+    ) -> list[dict[str, Any]]:
+        """Rank chunks by Jaccard similarity of word 1-2 gram sets.
+
+        Every chunk is compared with the query in C++; chunks sharing no
+        n-gram are omitted. Metadata filters run after ranking and before
+        ``top_k``. Order is descending score, then ascending chunk ID.
+        """
+        if top_k is not None and (
+            not isinstance(top_k, int) or isinstance(top_k, bool)
+        ):
+            raise TypeError("top_k must be a non-negative integer or None")
+        if top_k is not None and top_k < 0:
+            raise ValueError("top_k must be non-negative")
+        if top_k == 0:
+            return []
+        normalized_ticker = ticker.strip().casefold() if ticker is not None else None
+
+        results: list[dict[str, Any]] = []
+        for ranked in self.jaccard_index.rank(normalize_query(query)):
+            chunk_result = self._chunk_result(ranked.chunk_id)
+            if normalized_ticker is not None and (
+                chunk_result.get("ticker", "").casefold() != normalized_ticker
+            ):
+                continue
+            if (
+                fiscal_year is not None
+                and chunk_result.get("fiscal_year") != fiscal_year
+            ):
+                continue
+            results.append(
+                {
+                    **chunk_result,
+                    "score": ranked.score,
+                    "shared_ngrams": ranked.shared_ngrams,
+                    "union_size": ranked.union_size,
+                    "algorithm": "jaccard",
+                }
+            )
+            if top_k is not None and len(results) == top_k:
+                break
+        return results
+
+    def approximate_search(
+        self,
+        query: str,
+        *,
+        ticker: str | None = None,
+        fiscal_year: int | None = None,
+        top_k: int | None = 10,
+        alpha: float = DEFAULT_ALPHA,
+    ) -> list[dict[str, Any]]:
+        """Rank chunks that contain a corrected content word of the query.
+
+        Stopwords are dropped, each remaining token is corrected with the C++
+        Levenshtein matcher, and the OR candidates (after metadata filters)
+        are reranked in C++ by ``alpha * coverage + (1 - alpha) * J / J_max``.
+        A corrected term counts ``1 / (1 + distance)`` in coverage. Order is
+        descending score, then ascending chunk ID.
+        """
+        self._validate_approximate_args(ticker, fiscal_year, top_k, alpha)
+        results, _ = self._approximate(query, ticker, fiscal_year, top_k, alpha)
+        return results
+
+    def compare_search(
+        self,
+        query: str,
+        *,
+        ticker: str | None = None,
+        fiscal_year: int | None = None,
+        top_k: int | None = 10,
+        alpha: float = DEFAULT_ALPHA,
+    ) -> dict[str, Any]:
+        """Run exact and approximate search on one question, with timings.
+
+        The exact side is ranked AND search, falling back to ranked OR when
+        AND finds nothing. Both sides apply the same filters before ``top_k``,
+        and each ``candidate_count`` is the number of matches after filters.
+        """
+        self._validate_approximate_args(ticker, fiscal_year, top_k, alpha)
+        if not normalize_query(query):
+            return {
+                "query": query,
+                "terms": [],
+                "stopword_fallback": False,
+                "unmatched_terms": [],
+                "exact": {"mode": "none", "results": [], "candidate_count": 0, "time_ms": 0.0},
+                "approximate": {
+                    "results": [],
+                    "candidate_count": 0,
+                    "time_ms": 0.0,
+                    "steps_ms": {"correction": 0.0, "candidates": 0.0, "rerank": 0.0},
+                },
+                "shared_chunk_ids": [],
+            }
+
+        start = time.perf_counter()
+        mode = "and"
+        ranked = self.ranked_and_search(query)
+        if not ranked:
+            mode = "or"
+            ranked = self.ranked_or_search(query)
+        if not ranked:
+            mode = "none"
+        exact_matches = [
+            {**result, "algorithm": "term_frequency"}
+            for result in ranked
+            if self._passes_filters(result, ticker, fiscal_year)
+        ]
+        exact_results = exact_matches if top_k is None else exact_matches[:top_k]
+        exact_time = (time.perf_counter() - start) * 1000
+
+        start = time.perf_counter()
+        approximate_results, details = self._approximate(
+            query, ticker, fiscal_year, top_k, alpha
+        )
+        approximate_time = (time.perf_counter() - start) * 1000
+
+        shared = {result["chunk_id"] for result in exact_results} & {
+            result["chunk_id"] for result in approximate_results
+        }
+        return {
+            "query": query,
+            "terms": details["terms"],
+            "stopword_fallback": details["stopword_fallback"],
+            "unmatched_terms": details["unmatched_terms"],
+            "exact": {
+                "mode": mode,
+                "results": exact_results,
+                "candidate_count": len(exact_matches),
+                "time_ms": exact_time,
+            },
+            "approximate": {
+                "results": approximate_results,
+                "candidate_count": details["candidate_count"],
+                "time_ms": approximate_time,
+                "steps_ms": details["steps_ms"],
+            },
+            "shared_chunk_ids": sorted(shared),
+        }
+
+    def _approximate(
+        self,
+        query: str,
+        ticker: str | None,
+        fiscal_year: int | None,
+        top_k: int | None,
+        alpha: float,
+    ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        """Correct, gather OR candidates, and rerank them in C++."""
+        start = time.perf_counter()
+        tokens = normalize_query(query)
+        content = [token for token in tokens if token not in STOPWORDS]
+        stopword_fallback = bool(tokens) and not content
+        if stopword_fallback:
+            content = tokens
+
+        records: list[dict[str, Any]] = []
+        for token in content:
+            record = self._correct_token(token)
+            if not stopword_fallback and record["corrected"] in STOPWORDS:
+                continue
+            distance = record["distance"]
+            record["weight"] = 1.0 if distance is None else 1.0 / (1 + distance)
+            records.append(record)
+
+        ngram_tokens = [record["corrected"] for record in records]
+        weights: dict[str, float] = {}
+        for record in records:
+            word = record["corrected"]
+            weights[word] = max(weights.get(word, 0.0), record["weight"])
+        terms = [investment_engine.WeightedTerm(word, weight) for word, weight in weights.items()]
+        correction_time = (time.perf_counter() - start) * 1000
+
+        start = time.perf_counter()
+        chunk_results: dict[str, dict[str, Any]] = {}
+        for chunk_id in self.index.or_query(list(weights)):
+            chunk_result = self._chunk_result(chunk_id)
+            if self._passes_filters(chunk_result, ticker, fiscal_year):
+                chunk_results[chunk_id] = chunk_result
+        candidates_time = (time.perf_counter() - start) * 1000
+
+        start = time.perf_counter()
+        results = [
+            {
+                **chunk_results[ranked.chunk_id],
+                "score": ranked.score,
+                "coverage": ranked.coverage,
+                "jaccard": ranked.jaccard,
+                "jaccard_scaled": ranked.jaccard_scaled,
+                "matched_terms": ranked.matched_terms,
+                "algorithm": "approximate",
+            }
+            for ranked in investment_engine.rerank_candidates(
+                self.index,
+                self.jaccard_index,
+                list(chunk_results),
+                terms,
+                ngram_tokens,
+                float(alpha),
+                top_k,
+            )
+        ]
+        rerank_time = (time.perf_counter() - start) * 1000
+
+        details = {
+            "terms": records,
+            "stopword_fallback": stopword_fallback,
+            "unmatched_terms": [
+                record["original"]
+                for record in records
+                if record["distance"] is None
+                and not any(character.isdigit() for character in record["original"])
+            ],
+            "candidate_count": len(chunk_results),
+            "steps_ms": {
+                "correction": correction_time,
+                "candidates": candidates_time,
+                "rerank": rerank_time,
+            },
+        }
+        return results, details
+
+    def _correct_token(self, token: str) -> dict[str, Any]:
+        if any(character.isdigit() for character in token):
+            return {"original": token, "corrected": token, "distance": None}
+        matches = self.fuzzy_matcher.match(token, 1, None)
+        if matches:
+            return {
+                "original": token,
+                "corrected": matches[0].word,
+                "distance": matches[0].distance,
+            }
+        return {"original": token, "corrected": token, "distance": None}
+
+    @staticmethod
+    def _validate_approximate_args(
+        ticker: str | None,
+        fiscal_year: int | None,
+        top_k: int | None,
+        alpha: float,
+    ) -> None:
+        if ticker is not None and not isinstance(ticker, str):
+            raise TypeError("ticker must be a string or None")
+        if fiscal_year is not None and (
+            not isinstance(fiscal_year, int) or isinstance(fiscal_year, bool)
+        ):
+            raise TypeError("fiscal_year must be an integer or None")
+        if top_k is not None and (
+            not isinstance(top_k, int) or isinstance(top_k, bool)
+        ):
+            raise TypeError("top_k must be a non-negative integer or None")
+        if top_k is not None and top_k < 0:
+            raise ValueError("top_k must be non-negative")
+        if not isinstance(alpha, (int, float)) or isinstance(alpha, bool):
+            raise TypeError("alpha must be a number")
+        if not 0.0 <= alpha <= 1.0:
+            raise ValueError("alpha must be in [0, 1]")
+
+    @staticmethod
+    def _passes_filters(
+        chunk_result: dict[str, Any],
+        ticker: str | None,
+        fiscal_year: int | None,
+    ) -> bool:
+        if ticker is not None and (
+            chunk_result.get("ticker", "").casefold() != ticker.strip().casefold()
+        ):
+            return False
+        return fiscal_year is None or chunk_result.get("fiscal_year") == fiscal_year
 
     def _chunk_result(self, chunk_id: str) -> dict[str, Any]:
         metadata = self.index.get_metadata(chunk_id) or {}
