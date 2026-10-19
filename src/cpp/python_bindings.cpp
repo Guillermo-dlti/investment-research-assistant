@@ -1,6 +1,7 @@
 #include "inverted_index.h"
 #include "kmp.h"
 #include "levenshtein.h"
+#include "ngram_jaccard.h"
 #include "preprocessed_collection_loader.h"
 #include "trie.h"
 #include "vocabulary_loader.h"
@@ -33,6 +34,15 @@ FuzzyMatcher loadFuzzyMatcherFromFile(const std::string& path) {
         matcher.addWord(entry.token, entry.frequency);
     }
     return matcher;
+}
+
+JaccardIndex loadJaccardIndexFromFile(const std::string& path) {
+    const PreprocessedCollection collection = loadPreprocessedCollection(path);
+    JaccardIndex index;
+    for (const PreprocessedChunk& chunk : collection.chunks) {
+        index.addChunk(chunk.chunk_id, chunk.tokens);
+    }
+    return index;
 }
 
 InvertedIndex loadIndexFromFile(const std::string& path) {
@@ -160,6 +170,31 @@ PYBIND11_MODULE(investment_engine, module) {
         )
         .def_property_readonly("size", &FuzzyMatcher::size);
 
+    py::class_<JaccardResult>(module, "JaccardResult")
+        .def_readonly("chunk_id", &JaccardResult::chunk_id)
+        .def_readonly("score", &JaccardResult::score)
+        .def_readonly("shared_ngrams", &JaccardResult::shared_ngrams)
+        .def_readonly("union_size", &JaccardResult::union_size)
+        .def("__repr__", [](const JaccardResult& result) {
+            return "JaccardResult(chunk_id='" + result.chunk_id +
+                   "', score=" + std::to_string(result.score) +
+                   ", shared_ngrams=" + std::to_string(result.shared_ngrams) +
+                   ", union_size=" + std::to_string(result.union_size) + ")";
+        });
+
+    py::class_<JaccardIndex>(module, "JaccardIndex")
+        .def(py::init<std::size_t, std::size_t>(), py::arg("min_n") = 1, py::arg("max_n") = 2)
+        .def("add_chunk", &JaccardIndex::addChunk, py::arg("chunk_id"), py::arg("tokens"))
+        .def(
+            "rank",
+            &JaccardIndex::rank,
+            py::arg("query_tokens"),
+            py::arg("top_k") = py::none()
+        )
+        .def_property_readonly("chunk_count", &JaccardIndex::chunkCount)
+        .def_property_readonly("min_n", &JaccardIndex::minN)
+        .def_property_readonly("max_n", &JaccardIndex::maxN);
+
     module.def(
         "load_trie",
         &loadTrieFromFile,
@@ -198,6 +233,34 @@ PYBIND11_MODULE(investment_engine, module) {
         &defaultMaxDistance,
         py::arg("word"),
         "Default fuzzy cutoff: 1 edit up to 4 bytes, otherwise 2."
+    );
+    module.def(
+        "load_jaccard_index",
+        &loadJaccardIndexFromFile,
+        py::arg("collection_path"),
+        "Load the preprocessed collection into the C++ word n-gram Jaccard index."
+    );
+    module.def(
+        "character_ngrams",
+        &characterNgrams,
+        py::arg("text"),
+        py::arg("n"),
+        "Sorted, unique byte n-grams of text."
+    );
+    module.def(
+        "word_ngrams",
+        &wordNgrams,
+        py::arg("tokens"),
+        py::arg("min_n"),
+        py::arg("max_n"),
+        "Sorted, unique runs of min_n..max_n tokens joined by spaces."
+    );
+    module.def(
+        "jaccard_similarity",
+        &jaccardSimilarity,
+        py::arg("first"),
+        py::arg("second"),
+        "Jaccard similarity of two sorted, unique n-gram sets."
     );
     module.def(
         "compute_lps",

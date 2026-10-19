@@ -45,6 +45,7 @@ class SearchEngine:
         self.trie = investment_engine.load_trie(str(vocabulary_path))
         self.fuzzy_matcher = investment_engine.load_fuzzy_matcher(str(vocabulary_path))
         self.index = investment_engine.load_inverted_index(str(collection_path))
+        self.jaccard_index = investment_engine.load_jaccard_index(str(collection_path))
         self._normalized_chunks = self._load_normalized_chunks(collection_path)
 
     @property
@@ -227,6 +228,55 @@ class SearchEngine:
                 )
         results.sort(key=lambda result: (-result["score"], result["chunk_id"]))
         return results if top_k is None else results[:top_k]
+
+    def jaccard_search(
+        self,
+        query: str,
+        *,
+        ticker: str | None = None,
+        fiscal_year: int | None = None,
+        top_k: int | None = None,
+    ) -> list[dict[str, Any]]:
+        """Rank chunks by Jaccard similarity of word 1-2 gram sets.
+
+        Every chunk is compared with the query in C++; chunks sharing no
+        n-gram are omitted. Metadata filters run after ranking and before
+        ``top_k``. Order is descending score, then ascending chunk ID.
+        """
+        if top_k is not None and (
+            not isinstance(top_k, int) or isinstance(top_k, bool)
+        ):
+            raise TypeError("top_k must be a non-negative integer or None")
+        if top_k is not None and top_k < 0:
+            raise ValueError("top_k must be non-negative")
+        if top_k == 0:
+            return []
+        normalized_ticker = ticker.strip().casefold() if ticker is not None else None
+
+        results: list[dict[str, Any]] = []
+        for ranked in self.jaccard_index.rank(normalize_query(query)):
+            chunk_result = self._chunk_result(ranked.chunk_id)
+            if normalized_ticker is not None and (
+                chunk_result.get("ticker", "").casefold() != normalized_ticker
+            ):
+                continue
+            if (
+                fiscal_year is not None
+                and chunk_result.get("fiscal_year") != fiscal_year
+            ):
+                continue
+            results.append(
+                {
+                    **chunk_result,
+                    "score": ranked.score,
+                    "shared_ngrams": ranked.shared_ngrams,
+                    "union_size": ranked.union_size,
+                    "algorithm": "jaccard",
+                }
+            )
+            if top_k is not None and len(results) == top_k:
+                break
+        return results
 
     def _chunk_result(self, chunk_id: str) -> dict[str, Any]:
         metadata = self.index.get_metadata(chunk_id) or {}

@@ -44,6 +44,9 @@ target_include_directories(z_function_core PUBLIC src/cpp)
 add_library(levenshtein_core src/cpp/levenshtein.cpp)
 target_include_directories(levenshtein_core PUBLIC src/cpp)
 
+add_library(ngram_jaccard_core src/cpp/ngram_jaccard.cpp)
+target_include_directories(ngram_jaccard_core PUBLIC src/cpp)
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
     target_compile_options(json_support PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(trie_core PRIVATE -Wall -Wextra -Wpedantic)
@@ -51,6 +54,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
     target_compile_options(kmp_core PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(z_function_core PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(levenshtein_core PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(ngram_jaccard_core PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
 add_executable(trie_demo src/cpp/trie_demo.cpp)
@@ -67,6 +71,9 @@ target_link_libraries(z_function_demo PRIVATE z_function_core kmp_core inverted_
 
 add_executable(levenshtein_demo src/cpp/levenshtein_demo.cpp)
 target_link_libraries(levenshtein_demo PRIVATE levenshtein_core trie_core)
+
+add_executable(ngram_jaccard_demo src/cpp/ngram_jaccard_demo.cpp)
+target_link_libraries(ngram_jaccard_demo PRIVATE ngram_jaccard_core inverted_index_core)
 
 add_executable(exact_matching_benchmark src/cpp/exact_matching_benchmark.cpp)
 target_link_libraries(
@@ -88,6 +95,7 @@ pybind11_add_module(investment_engine MODULE src/cpp/python_bindings.cpp)
 target_link_libraries(
     investment_engine
     PRIVATE trie_core inverted_index_core kmp_core z_function_core levenshtein_core
+        ngram_jaccard_core
 )
 set_target_properties(
     investment_engine
@@ -111,6 +119,9 @@ target_link_libraries(z_function_tests PRIVATE z_function_core kmp_core)
 
 add_executable(levenshtein_tests src/cpp/tests/levenshtein_tests.cpp)
 target_link_libraries(levenshtein_tests PRIVATE levenshtein_core)
+
+add_executable(ngram_jaccard_tests src/cpp/tests/ngram_jaccard_tests.cpp)
+target_link_libraries(ngram_jaccard_tests PRIVATE ngram_jaccard_core)
 
 set(SYNTHETIC_TRIE_TESTS
     insert_and_search
@@ -198,6 +209,16 @@ set(LEVENSHTEIN_TESTS
 foreach(TEST_NAME IN LISTS LEVENSHTEIN_TESTS)
     add_test(NAME "levenshtein_${TEST_NAME}" COMMAND levenshtein_tests "${TEST_NAME}")
     set_tests_properties("levenshtein_${TEST_NAME}" PROPERTIES LABELS "portable;levenshtein")
+endforeach()
+
+set(NGRAM_JACCARD_TESTS
+    character_grams character_short_and_empty character_utf8_bytes word_grams
+    word_range_validation jaccard_values jaccard_symmetry index_ranking
+    index_tie_break index_limits index_validation
+)
+foreach(TEST_NAME IN LISTS NGRAM_JACCARD_TESTS)
+    add_test(NAME "ngram_jaccard_${TEST_NAME}" COMMAND ngram_jaccard_tests "${TEST_NAME}")
+    set_tests_properties("ngram_jaccard_${TEST_NAME}" PROPERTIES LABELS "portable;ngram_jaccard")
 endforeach()
 
 set(SYNTHETIC_INVERTED_INDEX_TESTS
