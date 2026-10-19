@@ -1,4 +1,4 @@
-"""Python interface to the bound C++ retrieval and exact-matching algorithms."""
+"""Python interface to the bound C++ retrieval, exact, and fuzzy matching algorithms."""
 
 from __future__ import annotations
 
@@ -43,6 +43,7 @@ class SearchEngine:
         collection_path: Path | str = DEFAULT_COLLECTION,
     ) -> None:
         self.trie = investment_engine.load_trie(str(vocabulary_path))
+        self.fuzzy_matcher = investment_engine.load_fuzzy_matcher(str(vocabulary_path))
         self.index = investment_engine.load_inverted_index(str(collection_path))
         self._normalized_chunks = self._load_normalized_chunks(collection_path)
 
@@ -61,6 +62,58 @@ class SearchEngine:
         if k < 0:
             raise ValueError("k must be non-negative")
         return self.trie.autocomplete(normalize_text(prefix), k)
+
+    def fuzzy_terms(
+        self,
+        word: str,
+        *,
+        max_distance: int | None = None,
+        limit: int = 5,
+    ) -> list[dict[str, Any]]:
+        """Return vocabulary words within a Levenshtein distance of ``word``.
+
+        Ordered by distance, then corpus frequency, then word. An exact
+        vocabulary hit returns only itself at distance 0.
+        """
+        if max_distance is not None and max_distance < 0:
+            raise ValueError("max_distance must be non-negative")
+        if limit < 0:
+            raise ValueError("limit must be non-negative")
+        token = normalize_single_token(word)
+        return [
+            {
+                "word": match.word,
+                "distance": match.distance,
+                "frequency": match.frequency,
+            }
+            for match in self.fuzzy_matcher.match(token, limit, max_distance)
+        ]
+
+    def correct_query(self, query: str) -> list[dict[str, Any]]:
+        """Map each query token to its closest vocabulary word.
+
+        Tokens containing digits are kept as typed, because a near-miss number
+        such as ``$97,858`` vs ``$97,868`` is a different fact, not a typo.
+        Tokens with no vocabulary word within the cutoff are kept unchanged
+        with ``distance`` set to ``None``.
+        """
+        corrections: list[dict[str, Any]] = []
+        for token in normalize_query(query):
+            if any(character.isdigit() for character in token):
+                corrections.append({"original": token, "corrected": token, "distance": None})
+                continue
+            matches = self.fuzzy_matcher.match(token, 1, None)
+            if matches:
+                corrections.append(
+                    {
+                        "original": token,
+                        "corrected": matches[0].word,
+                        "distance": matches[0].distance,
+                    }
+                )
+            else:
+                corrections.append({"original": token, "corrected": token, "distance": None})
+        return corrections
 
     def single_token_search(self, query: str) -> list[dict[str, Any]]:
         token = normalize_single_token(query)

@@ -41,12 +41,16 @@ target_include_directories(kmp_core PUBLIC src/cpp)
 add_library(z_function_core src/cpp/z_function.cpp)
 target_include_directories(z_function_core PUBLIC src/cpp)
 
+add_library(levenshtein_core src/cpp/levenshtein.cpp)
+target_include_directories(levenshtein_core PUBLIC src/cpp)
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
     target_compile_options(json_support PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(trie_core PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(inverted_index_core PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(kmp_core PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(z_function_core PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(levenshtein_core PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
 add_executable(trie_demo src/cpp/trie_demo.cpp)
@@ -60,6 +64,9 @@ target_link_libraries(kmp_demo PRIVATE kmp_core inverted_index_core)
 
 add_executable(z_function_demo src/cpp/z_function_demo.cpp)
 target_link_libraries(z_function_demo PRIVATE z_function_core kmp_core inverted_index_core)
+
+add_executable(levenshtein_demo src/cpp/levenshtein_demo.cpp)
+target_link_libraries(levenshtein_demo PRIVATE levenshtein_core trie_core)
 
 add_executable(exact_matching_benchmark src/cpp/exact_matching_benchmark.cpp)
 target_link_libraries(
@@ -80,7 +87,7 @@ endif()
 pybind11_add_module(investment_engine MODULE src/cpp/python_bindings.cpp)
 target_link_libraries(
     investment_engine
-    PRIVATE trie_core inverted_index_core kmp_core z_function_core
+    PRIVATE trie_core inverted_index_core kmp_core z_function_core levenshtein_core
 )
 set_target_properties(
     investment_engine
@@ -101,6 +108,9 @@ target_link_libraries(kmp_tests PRIVATE kmp_core)
 
 add_executable(z_function_tests src/cpp/tests/z_function_tests.cpp)
 target_link_libraries(z_function_tests PRIVATE z_function_core kmp_core)
+
+add_executable(levenshtein_tests src/cpp/tests/levenshtein_tests.cpp)
+target_link_libraries(levenshtein_tests PRIVATE levenshtein_core)
 
 set(SYNTHETIC_TRIE_TESTS
     insert_and_search
@@ -177,6 +187,17 @@ set(KMP_TESTS
 foreach(TEST_NAME IN LISTS KMP_TESTS)
     add_test(NAME "kmp_${TEST_NAME}" COMMAND kmp_tests "${TEST_NAME}")
     set_tests_properties("kmp_${TEST_NAME}" PROPERTIES LABELS "portable;kmp")
+endforeach()
+
+set(LEVENSHTEIN_TESTS
+    classic identical empty_strings symmetry single_edits utf8_bytes
+    bounded_agrees bounded_randomized default_cutoff matcher_typo matcher_exact
+    matcher_ordering matcher_word_tie_break matcher_limits matcher_custom_bound
+    matcher_validation
+)
+foreach(TEST_NAME IN LISTS LEVENSHTEIN_TESTS)
+    add_test(NAME "levenshtein_${TEST_NAME}" COMMAND levenshtein_tests "${TEST_NAME}")
+    set_tests_properties("levenshtein_${TEST_NAME}" PROPERTIES LABELS "portable;levenshtein")
 endforeach()
 
 set(SYNTHETIC_INVERTED_INDEX_TESTS

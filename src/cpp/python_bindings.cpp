@@ -1,5 +1,6 @@
 #include "inverted_index.h"
 #include "kmp.h"
+#include "levenshtein.h"
 #include "preprocessed_collection_loader.h"
 #include "trie.h"
 #include "vocabulary_loader.h"
@@ -23,6 +24,15 @@ std::unique_ptr<Trie> loadTrieFromFile(const std::string& path) {
         trie->insert(entry.token);
     }
     return trie;
+}
+
+FuzzyMatcher loadFuzzyMatcherFromFile(const std::string& path) {
+    const VocabularyData vocabulary = loadVocabulary(path);
+    FuzzyMatcher matcher;
+    for (const VocabularyEntry& entry : vocabulary.entries) {
+        matcher.addWord(entry.token, entry.frequency);
+    }
+    return matcher;
 }
 
 InvertedIndex loadIndexFromFile(const std::string& path) {
@@ -57,7 +67,8 @@ py::object metadataAsPython(
 
 PYBIND11_MODULE(investment_engine, module) {
     module.doc() =
-        "Python bindings for the C++17 retrieval and exact-matching algorithms.";
+        "Python bindings for the C++17 retrieval, exact-matching, and "
+        "approximate-matching algorithms.";
 
     py::class_<Trie>(module, "Trie")
         .def(py::init<>())
@@ -122,6 +133,33 @@ PYBIND11_MODULE(investment_engine, module) {
         .def_property_readonly("chunk_count", &InvertedIndex::chunkCount)
         .def_property_readonly("vocabulary_size", &InvertedIndex::vocabularySize);
 
+    py::class_<FuzzyMatch>(module, "FuzzyMatch")
+        .def_readonly("word", &FuzzyMatch::word)
+        .def_readonly("distance", &FuzzyMatch::distance)
+        .def_readonly("frequency", &FuzzyMatch::frequency)
+        .def("__repr__", [](const FuzzyMatch& match) {
+            return "FuzzyMatch(word='" + match.word +
+                   "', distance=" + std::to_string(match.distance) +
+                   ", frequency=" + std::to_string(match.frequency) + ")";
+        });
+
+    py::class_<FuzzyMatcher>(module, "FuzzyMatcher")
+        .def(py::init<>())
+        .def(
+            "add_word",
+            &FuzzyMatcher::addWord,
+            py::arg("word"),
+            py::arg("frequency") = 0
+        )
+        .def(
+            "match",
+            &FuzzyMatcher::match,
+            py::arg("query"),
+            py::arg("limit") = 5,
+            py::arg("max_distance") = py::none()
+        )
+        .def_property_readonly("size", &FuzzyMatcher::size);
+
     module.def(
         "load_trie",
         &loadTrieFromFile,
@@ -133,6 +171,33 @@ PYBIND11_MODULE(investment_engine, module) {
         &loadIndexFromFile,
         py::arg("collection_path"),
         "Load the preprocessed collection and construct the C++ index."
+    );
+    module.def(
+        "load_fuzzy_matcher",
+        &loadFuzzyMatcherFromFile,
+        py::arg("vocabulary_path"),
+        "Load the generated vocabulary into the C++ Levenshtein fuzzy matcher."
+    );
+    module.def(
+        "levenshtein_distance",
+        &levenshteinDistance,
+        py::arg("first"),
+        py::arg("second"),
+        "Unit-cost edit distance between two UTF-8 byte strings."
+    );
+    module.def(
+        "bounded_levenshtein",
+        &boundedLevenshtein,
+        py::arg("first"),
+        py::arg("second"),
+        py::arg("max_distance"),
+        "Edit distance, or max_distance + 1 once it is known to exceed the bound."
+    );
+    module.def(
+        "default_max_distance",
+        &defaultMaxDistance,
+        py::arg("word"),
+        "Default fuzzy cutoff: 1 edit up to 4 bytes, otherwise 2."
     );
     module.def(
         "compute_lps",
