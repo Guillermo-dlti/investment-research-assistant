@@ -33,9 +33,9 @@ Financial reports will be collected and converted into clean text. The text will
 
 ## Current Status
 
-**Stage 2 — Text Preprocessing and Indexing: Step 10 complete**
+**Stage 2 — Text Preprocessing and Indexing: Step 11 complete**
 
-The ten selected SEC filings have been downloaded, extracted, chunked, consolidated, and preprocessed. A C++17 Trie can now load and query the generated vocabulary. The inverted index, matching and similarity algorithms, Python/C++ integration, AI integration, and user interface have not yet been implemented.
+The ten selected SEC filings have been downloaded, extracted, chunked, consolidated, and preprocessed. The C++17 Trie and chunk-level inverted index can now load and query the generated data. Matching and similarity algorithms, Python/C++ integration, AI integration, and the user interface have not yet been implemented.
 
 ## Development Setup
 
@@ -196,6 +196,23 @@ ctest --test-dir build --output-on-failure
 ```
 
 The demonstration loader parses the generated vocabulary's `unique_tokens` and `token_frequencies` fields using a small standard-library-only JSON reader, so no additional C++ dependency is required. It validates the declared size, token-frequency records, and duplicate tokens before insertion. The ten synthetic tests are portable. Two additional CTests load and validate the complete 14,180-token vocabulary when `data/metadata/vocabulary.json` exists during CMake configuration; regenerate it with the preprocessing command before configuring if those local tests are absent.
+
+## C++ Inverted Index
+
+An inverted index maps each normalized token to an ordered postings list of chunk IDs and the token's frequency within each chunk. This allows the project to retrieve chunks containing one term, all terms in an AND query, or at least one term in an OR query without scanning every chunk. Chunk metadata retains the document ID, ticker, and fiscal year. Duplicate chunk IDs are rejected, repeated tokens increase term frequency, and repeated query terms are deduplicated.
+
+Results are ordered lexicographically by chunk ID. Ranked queries use a deliberately simple score: the sum of term frequencies for the unique query tokens in each matching chunk. Results are sorted by descending score and then ascending chunk ID. This favors repetition and does not account for document length, term rarity, adjacent chunk overlap, or semantic relevance; TF-IDF, BM25, and semantic ranking are outside Step 11.
+
+Build and run the real-collection demonstration from the project root:
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
+./build/inverted_index_demo data/processed/preprocessed_collection.json
+ctest --test-dir build --output-on-failure
+```
+
+The reusable collection loader reads only the preprocessed fields needed by the index: `chunk_id`, `tokens`, `document_id`, `ticker`, and `fiscal_year`. It shares the standard-library JSON reader with the vocabulary loader and validates collection counts, token counts, required metadata, and unique chunk IDs. Eleven inverted-index tests use synthetic data and remain portable. One additional integration test is registered when the ignored preprocessed collection exists at CMake configuration time.
 
 ## Disclaimer
 

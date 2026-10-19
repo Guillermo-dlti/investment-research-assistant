@@ -6,22 +6,38 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_library(trie_core
-    src/cpp/trie.cpp
-    src/cpp/vocabulary_loader.cpp
-)
+add_library(json_support src/cpp/json_reader.cpp)
+target_include_directories(json_support PUBLIC src/cpp)
+
+add_library(trie_core src/cpp/trie.cpp src/cpp/vocabulary_loader.cpp)
 target_include_directories(trie_core PUBLIC src/cpp)
+target_link_libraries(trie_core PUBLIC json_support)
+
+add_library(inverted_index_core
+    src/cpp/inverted_index.cpp
+    src/cpp/preprocessed_collection_loader.cpp
+)
+target_include_directories(inverted_index_core PUBLIC src/cpp)
+target_link_libraries(inverted_index_core PUBLIC json_support)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
+    target_compile_options(json_support PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(trie_core PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(inverted_index_core PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
 add_executable(trie_demo src/cpp/trie_demo.cpp)
 target_link_libraries(trie_demo PRIVATE trie_core)
 
+add_executable(inverted_index_demo src/cpp/inverted_index_demo.cpp)
+target_link_libraries(inverted_index_demo PRIVATE inverted_index_core)
+
 enable_testing()
 add_executable(trie_tests src/cpp/tests/trie_tests.cpp)
 target_link_libraries(trie_tests PRIVATE trie_core)
+
+add_executable(inverted_index_tests src/cpp/tests/inverted_index_tests.cpp)
+target_link_libraries(inverted_index_tests PRIVATE inverted_index_core)
 
 set(SYNTHETIC_TRIE_TESTS
     insert_and_search
@@ -64,5 +80,53 @@ if(EXISTS "${TRIE_VOCABULARY_PATH}")
 else()
     message(STATUS
         "Generated vocabulary not found; local-vocabulary CTests will not be registered"
+    )
+endif()
+
+set(SYNTHETIC_INVERTED_INDEX_TESTS
+    single_token_lookup
+    missing_tokens
+    repeated_tokens
+    duplicate_chunk_ids
+    and_intersection
+    or_union
+    repeated_query_terms
+    empty_queries
+    deterministic_ordering
+    ranking_and_tie_breaking
+    chunk_and_vocabulary_counts
+)
+
+foreach(TEST_NAME IN LISTS SYNTHETIC_INVERTED_INDEX_TESTS)
+    add_test(
+        NAME "inverted_index_${TEST_NAME}"
+        COMMAND inverted_index_tests "${TEST_NAME}"
+    )
+    set_tests_properties(
+        "inverted_index_${TEST_NAME}"
+        PROPERTIES LABELS "portable"
+    )
+endforeach()
+
+set(PREPROCESSED_COLLECTION_PATH
+    "${CMAKE_SOURCE_DIR}/data/processed/preprocessed_collection.json"
+    CACHE FILEPATH
+    "Path to the generated Step 9 collection for local integration tests"
+)
+
+if(EXISTS "${PREPROCESSED_COLLECTION_PATH}")
+    add_test(
+        NAME inverted_index_real_collection_loading
+        COMMAND inverted_index_tests
+            real_collection_loading
+            "${PREPROCESSED_COLLECTION_PATH}"
+    )
+    set_tests_properties(
+        inverted_index_real_collection_loading
+        PROPERTIES LABELS "local_collection"
+    )
+else()
+    message(STATUS
+        "Preprocessed collection not found; local collection CTest will not be registered"
     )
 endif()

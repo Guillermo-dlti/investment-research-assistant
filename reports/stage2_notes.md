@@ -115,4 +115,66 @@ Because the alphabet contains at most 256 byte values, `log B` is a fixed bound,
 - The Trie is byte-oriented rather than Unicode-code-point-aware or locale-aware.
 - The schema-aware loader intentionally targets the generated vocabulary structure rather than serving as a general-purpose JSON library.
 - The entire vocabulary and Trie are held in memory.
-- No inverted index, KMP, Z-function, Levenshtein distance, n-gram/Jaccard similarity, pybind11 integration, or benchmarking was added in Step 10.
+- Step 10 did not add an inverted index or later matching features. Step 11 now adds only the custom inverted index; KMP, Z-function, Levenshtein distance, n-gram/Jaccard similarity, pybind11 integration, and benchmarking remain unimplemented.
+
+## Step 11: C++17 Inverted Index
+
+### Structure and Policies
+
+The index maps each normalized token to an ordered map from chunk ID to term frequency: `token -> {chunk_id -> term_frequency}`. The outer token map uses `std::unordered_map` for average constant-time token access. Each postings map uses `std::map`, which guarantees unique chunk IDs and ascending deterministic order. Chunk metadata is stored separately by chunk ID and preserves `document_id`, `ticker`, and `fiscal_year`.
+
+Adding a chunk first counts its tokens locally. Repeated occurrences therefore increase that token's frequency without producing duplicate postings. A repeated chunk ID throws `std::invalid_argument` before the index is changed. Empty token lists are valid index inputs, although the real preprocessed chunks are nonempty.
+
+Query terms must already follow the Python normalization policy. Repeated terms are deduplicated before Boolean evaluation or scoring. Empty AND and OR queries return no results. An absent AND term makes the intersection empty; an absent OR term contributes no chunks. Single-token and Boolean results use ascending chunk-ID order.
+
+AND evaluation intersects sorted postings lists and starts with the shortest list. OR evaluation repeatedly merges sorted postings lists with set union. Both strategies avoid scanning unrelated collection chunks.
+
+### Ranking
+
+For unique normalized query terms `Q`, the implemented score is:
+
+`score(chunk, Q) = sum(tf(term, chunk) for term in Q)`
+
+AND ranking considers only chunks containing every term; OR ranking considers chunks containing at least one term. Results are sorted by descending score, then ascending chunk ID. Raw term frequency is transparent but biased toward repeated wording, longer passages, and text repeated by Stage 1 chunk overlap. It does not account for corpus rarity, length normalization, phrase proximity, or semantic relevance.
+
+### Real-Collection Results
+
+The loader read and indexed all **2,458 chunks** and reproduced all **14,180 unique normalized tokens**. It validated required metadata, per-chunk token counts, the declared collection size, and unique chunk IDs.
+
+Observed demonstration results:
+
+- `revenue`: 521 matching chunks.
+- `artificial AND intelligence`: 30 matching chunks.
+- `nvidia OR amd`: 354 matching chunks.
+- Highest-ranked `artificial AND intelligence` result: `GOOGL_2025_10K_0067`, score 4.
+- Highest-ranked `nvidia OR amd` result: `AMD_2025_10K_0027`, score 18.
+
+The demonstration prints up to five lexicographically ordered IDs for each Boolean query and the top five ranked results with ticker, fiscal year, and document ID.
+
+### Complexity
+
+Let:
+
+- `T` be total indexed token occurrences.
+- `U_c` be the unique tokens in one chunk.
+- `C` be indexed chunks.
+- `V` be indexed vocabulary size.
+- `P_total` be distinct token/chunk postings.
+- `q` be unique query terms.
+- `df_i` be the postings length of query term `i`.
+- `P = sum(df_i)`.
+- `M` be matching chunks.
+
+Construction counts a chunk's tokens in expected `O(t_c)` time with a hash table, then inserts each distinct token into an outer hash table and an ordered postings map in `O(log df)` time. Across the corpus, expected construction time is `O(T + sum(log(df_posting + 1)))`, bounded more simply by `O(T + P_total log C)`. Adversarial hash collisions can degrade hash operations from expected constant time to linear time.
+
+A single-token postings lookup takes expected `O(1)` to locate the token plus `O(df)` to copy the returned chunk IDs; outer hash lookup is `O(V)` in the collision-heavy worst case. A term-frequency lookup adds `O(log df)` for the ordered postings map.
+
+AND query evaluation copies `P` postings, orders the `q` lists by size in `O(q log q)`, and performs sorted intersections starting with the shortest. The merge work is `O(P)` under this order, for expected `O(q + q log q + P)` including average token lookup. OR uses sequential sorted unions; its merge work can reach `O(qC)` because the accumulated result can be revisited for every term, although sparse queries are usually closer to their postings volume.
+
+Ranking evaluates `q` term frequencies for each of `M` matches and sorts the results, costing expected `O(Mq log C + M log M)` with the ordered postings representation. Index memory is `O(C + V + P_total)` plus stored strings and container overhead. The schema loader also holds the parsed token arrays in memory while the demonstration builds the index.
+
+### Verification and Limitations
+
+Step 11 adds eleven portable synthetic CTests and one local real-collection integration CTest. Together with the twelve existing Trie tests, all **24 of 24 C++ tests passed**. All **45 Python tests passed** unchanged.
+
+The index is entirely in memory, OR union is sequential rather than a heap-based multiway merge, and ranking uses only raw frequency. It does not store token positions, so it cannot answer phrase or proximity queries. No KMP, Z-function, Levenshtein distance, n-gram/Jaccard similarity, BM25, TF-IDF, semantic retrieval, pybind11 integration, or user interface was added.

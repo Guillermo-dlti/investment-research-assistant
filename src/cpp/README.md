@@ -1,6 +1,6 @@
-# C++ Trie
+# C++ Trie and Inverted Index
 
-This directory contains the project's first custom C++17 data structure: a Trie for the normalized financial vocabulary.
+This directory contains custom C++17 data structures for the normalized financial corpus: a Trie for vocabulary lookup and an inverted index for chunk retrieval.
 
 ## Components
 
@@ -8,6 +8,11 @@ This directory contains the project's first custom C++17 data structure: a Trie 
 - `vocabulary_loader.h` and `vocabulary_loader.cpp`: a standard-library-only reader for the generated `vocabulary.json` schema.
 - `trie_demo.cpp`: loads the real vocabulary and demonstrates all public Trie operations.
 - `tests/trie_tests.cpp`: portable synthetic tests and local full-vocabulary tests.
+- `inverted_index.h` and `inverted_index.cpp`: postings, Boolean queries, metadata, and raw term-frequency ranking.
+- `preprocessed_collection_loader.h` and `preprocessed_collection_loader.cpp`: validated loading of chunk IDs, tokens, and filing metadata.
+- `inverted_index_demo.cpp`: indexes the real preprocessed collection and demonstrates retrieval and ranking.
+- `tests/inverted_index_tests.cpp`: eleven portable tests and one local real-collection integration test.
+- `json_reader.h` and `json_reader.cpp`: the shared standard-library-only JSON reader used by both loaders.
 
 No external Trie or JSON library is used. Nodes own their children with `std::unique_ptr`, and each node uses `std::map<unsigned char, ...>` so traversal is deterministic and bytewise lexicographic.
 
@@ -19,10 +24,11 @@ From the repository root, with the Python virtual environment activated so its C
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel
 ./build/trie_demo data/metadata/vocabulary.json
+./build/inverted_index_demo data/processed/preprocessed_collection.json
 ctest --test-dir build --output-on-failure
 ```
 
-The local vocabulary is generated and ignored by Git. If it is absent when CMake is configured, the ten synthetic tests remain available but the two local-vocabulary tests are not registered. Generate the file with `src/python/preprocess_text.py`, then configure CMake again to enable all 12 tests. A different vocabulary can be selected at configuration time with `-DTRIE_VOCABULARY_PATH=/absolute/path/to/vocabulary.json`.
+The local vocabulary and preprocessed collection are generated and ignored by Git. If either is absent when CMake is configured, its integration tests are not registered, while all synthetic tests remain available. Generate both with `src/python/preprocess_text.py`, then configure CMake again. Alternate paths can be selected with `-DTRIE_VOCABULARY_PATH=/absolute/path/to/vocabulary.json` and `-DPREPROCESSED_COLLECTION_PATH=/absolute/path/to/preprocessed_collection.json`.
 
 ## Token and Ordering Policy
 
@@ -38,4 +44,12 @@ Let `L` be the input token or prefix length in bytes, `d_i` the number of childr
 - Autocomplete takes `O(L log B + S + R)`, where `S` is the number of Trie nodes visited while enumerating at most `k` matches and `R` is the total number of bytes copied into returned strings. It is output-sensitive and is not always `O(L)`.
 - Memory is `O(N)` Trie nodes in the worst case, where `N` is the sum of byte lengths of all distinct inserted tokens, plus ordered-map and ownership overhead at each node. Shared prefixes reduce the actual node count.
 
-Current limitations include bytewise rather than Unicode-aware traversal, ordered-map overhead, lexicographic rather than frequency-ranked autocomplete, and an in-memory vocabulary load. The inverted index, matching algorithms, pybind11 bindings, and benchmarks remain future work.
+Current Trie limitations include bytewise rather than Unicode-aware traversal, ordered-map overhead, lexicographic rather than frequency-ranked autocomplete, and an in-memory vocabulary load.
+
+## Inverted Index Behavior
+
+The inverted index uses `token -> {chunk_id -> term_frequency}`. The outer token table is hash-based for average constant-time term access; each postings list is an ordered map so chunk IDs are unique and deterministic. AND queries intersect sorted postings lists, starting with the shortest. OR queries merge sorted postings lists. Empty queries return no results and absent terms behave normally: an absent AND term empties the result, while absent OR terms contribute nothing.
+
+For `q` unique query terms, let `df_i` be each term's postings length, `P = sum(df_i)`, `M` the number of matched chunks, and `C` the total chunks. Under average hash-table behavior, a copied single-token lookup costs `O(df)`; AND costs `O(q log q + P)` after ordering lists by size; the sequential OR merges cost up to `O(qC)` in the worst case. Ranking costs `O(Mq log C + M log M)` with ordered postings lookups and final score sorting. Index memory is `O(C + V + P_total)`, where `V` is indexed vocabulary size and `P_total` is the total number of distinct token/chunk pairs.
+
+Raw term-frequency ranking sums occurrences of unique query terms. It can overvalue repetition and overlapping chunks and does not normalize for chunk length or token rarity. The index holds the complete collection in memory. KMP, Z-function, approximate matching, n-grams, Jaccard similarity, pybind11 integration, and benchmarks remain future work.
