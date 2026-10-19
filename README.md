@@ -33,9 +33,9 @@ Financial reports will be collected and converted into clean text. The text will
 
 ## Current Status
 
-**Stage 2 — Text Preprocessing and Indexing: Step 9 complete**
+**Stage 2 — Text Preprocessing and Indexing: Step 10 complete**
 
-The ten selected SEC filings have been downloaded, extracted, chunked, consolidated, and preprocessed. The C++ data structures, retrieval algorithms, AI integration, and user interface have not yet been implemented.
+The ten selected SEC filings have been downloaded, extracted, chunked, consolidated, and preprocessed. A C++17 Trie can now load and query the generated vocabulary. The inverted index, matching and similarity algorithms, Python/C++ integration, AI integration, and user interface have not yet been implemented.
 
 ## Development Setup
 
@@ -178,7 +178,24 @@ python src/python/preprocess_text.py \
   --vocabulary data/metadata/vocabulary.json
 ```
 
-The preprocessed collection stores each original chunk ID and useful filing metadata alongside `normalized_text`, `tokens`, and `token_count`. The vocabulary stores lexicographically sorted token-frequency records plus the normalization and tokenization policies. These generated files are ignored by Git and can be reproduced from the consolidated collection. A later stage will use the vocabulary and token arrays as inputs to the C++ Trie and inverted index; those data structures are not implemented yet.
+The preprocessed collection stores each original chunk ID and useful filing metadata alongside `normalized_text`, `tokens`, and `token_count`. The vocabulary stores lexicographically sorted token-frequency records plus the normalization and tokenization policies. These generated files are ignored by Git and can be reproduced from the consolidated collection. The C++ Trie uses the vocabulary now; a later stage will use the token arrays to build the inverted index.
+
+## C++ Trie
+
+The custom C++17 Trie stores complete normalized vocabulary tokens and supports insertion, exact search, prefix checks, and lexicographically ordered autocomplete. It is useful for quickly checking whether a query term exists and for suggesting known financial terms by prefix. Autocomplete does not use token frequencies yet.
+
+The Trie treats each `std::string` as UTF-8 encoded bytes. This safely preserves punctuation and non-ASCII tokens such as `s&p`, `$97,858`, `12.5%`, `ai-powered`, and `chávez`, but it does not interpret Unicode code points or perform normalization. Callers must therefore supply text normalized by the Python preprocessing policy. Autocomplete order is deterministic unsigned-byte lexicographic order, not locale-aware dictionary order.
+
+Configure, build, demonstrate, and test from the project root:
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
+./build/trie_demo data/metadata/vocabulary.json
+ctest --test-dir build --output-on-failure
+```
+
+The demonstration loader parses the generated vocabulary's `unique_tokens` and `token_frequencies` fields using a small standard-library-only JSON reader, so no additional C++ dependency is required. It validates the declared size, token-frequency records, and duplicate tokens before insertion. The ten synthetic tests are portable. Two additional CTests load and validate the complete 14,180-token vocabulary when `data/metadata/vocabulary.json` exists during CMake configuration; regenerate it with the preprocessing command before configuring if those local tests are absent.
 
 ## Disclaimer
 
