@@ -22,7 +22,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | 8 | Context selection | Slice 2: Stage 5 | in-progress |
 | 9 | Language model answers | Slice 2: Stage 5 | in-progress |
 | 10 | Twenty question run | Slice 2: Stage 5 | in-progress |
-| 11 | Exact vs approximate comparison (Stage 6) | Slice 3: Stage 6 | planned |
+| 11 | Exact vs approximate comparison (Stage 6) | Slice 3: Stage 6 | in-progress |
 | 12 | GUI with Trie autocomplete (bonus) | Slice 4: Bonus | in-progress |
 | 13 | Final report | Deliverables | planned |
 | 14 | Demo video | Deliverables | planned |
@@ -108,10 +108,14 @@ Spec [0004](../specs/0004-context-selection-and-llm-answers.md) · code in `src/
 
 ## Slice 3: Stage 6, comparison
 
-### 11. Exact vs approximate comparison (Stage 6)
+### 11. Exact vs approximate comparison (Stage 6) · in-progress
 Runs one test question set through both search modes and compares average time, chunks examined or returned, chunk usefulness and the model's answers.
 **Done when:** a table and charts under `reports/` show both modes side by side, with at least one case where they agree and one where they differ strongly.
-- [ ] Build it: `/develop exact vs approximate comparison`
+- [x] Build it: `/develop exact vs approximate comparison`
+   - [x] `compare_strategies` over 24 questions (Stage 5 set plus 3 typo questions): repeated retrieval timings, candidates, top 10 overlap, hand written evidence rules for chunk usefulness, answer verdicts, and a collection size sweep (1/8x to 4x); 8 tests with a fake model
+   - [x] `reports/stage6_results.{json,md}`, three charts `reports/stage6_*.png`, and the analysis in `reports/stage6_notes.md`
+- [ ] Verify it: `/check verify exact vs approximate comparison`
+Code in `src/python/compare_strategies.py`
 
 ## Slice 4: Bonus
 

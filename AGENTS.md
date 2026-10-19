@@ -28,7 +28,7 @@ python src/python/preprocess_text.py --input data/chunks/collection.json --outpu
 # Build (configure AFTER data exists, so data tests register)
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DPython_EXECUTABLE="$PWD/.venv/bin/python" && cmake --build build --parallel
 
-# Test (expect 101 C++ and 134 Python passing with data present; Python tests use a fake model)
+# Test (expect 101 C++ and 142 Python passing with data present; Python tests use a fake model)
 ctest --test-dir build --output-on-failure && PYTHONPATH=build/python python -m pytest tests -q
 
 # Demos
@@ -37,6 +37,7 @@ PYTHONPATH=build/python python -m src.python.search_demo
 PYTHONPATH=build/python python -m src.python.approximate_search_demo  # exact vs approximate, Stage 4 evidence
 PYTHONPATH=build/python python -m src.python.ask "What was NVIDIA data center revenue in fiscal 2025?"
 PYTHONPATH=build/python python -m src.python.run_questions  # 21 questions → reports/stage5_results.{json,md}
+PYTHONPATH=build/python python -m src.python.compare_strategies  # 24 questions, exact vs approximate → reports/stage6_results.{json,md} + charts (Stage 6)
 PYTHONPATH=build/python python -m src.python.gui_server  # GUI at http://127.0.0.1:8765 (Trie autocomplete, cited answers; /?q=... asks on load)
 ```
 

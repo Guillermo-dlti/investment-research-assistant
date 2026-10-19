@@ -1,0 +1,2645 @@
+{
+  "settings": {
+    "model": "Qwen/Qwen2.5-3B-Instruct",
+    "repeats": 7,
+    "retrieval_top_k": 10,
+    "max_chunks": 4,
+    "word_budget": 1100,
+    "redundancy_threshold": 0.5
+  },
+  "summary": {
+    "approximate": {
+      "mean_retrieval_ms": 1.9428437032426398,
+      "median_retrieval_ms": 1.7706465441733599,
+      "max_retrieval_ms": 3.480082959868014,
+      "mean_candidates": 356.9583333333333,
+      "mean_retrieved": 10,
+      "mean_selected": 4,
+      "judged_questions": 22,
+      "retrieved_hits": 18,
+      "selected_hits": 17,
+      "mean_selected_precision": 0.4318181818181818,
+      "verdicts": {
+        "answered": 17,
+        "correct": 3,
+        "correct refusal": 1,
+        "missed fact": 1,
+        "refused": 2
+      },
+      "mean_generation_ms": 3157.2317135821017
+    },
+    "exact": {
+      "mean_retrieval_ms": 2.9242881767762205,
+      "median_retrieval_ms": 3.42700001783669,
+      "max_retrieval_ms": 4.779667011462152,
+      "mean_candidates": 681.2916666666666,
+      "mean_retrieved": 10,
+      "mean_selected": 4,
+      "judged_questions": 22,
+      "retrieved_hits": 16,
+      "selected_hits": 13,
+      "mean_selected_precision": 0.29545454545454547,
+      "verdicts": {
+        "answered": 12,
+        "correct": 2,
+        "correct refusal": 1,
+        "missed fact": 3,
+        "refused": 6
+      },
+      "mean_generation_ms": 3134.6643854437084
+    },
+    "agreement": {
+      "mean_retrieved_overlap": 0.14718250660588122,
+      "mean_selected_overlap": 0.1361111111111111,
+      "same_context": 0,
+      "questions": 24
+    }
+  },
+  "scaling": [
+    {
+      "factor": 0.125,
+      "chunks": 308,
+      "approximate": {
+        "mean_ms": 0.48195656563621014,
+        "mean_candidates": 124.54166666666667
+      },
+      "exact": {
+        "mean_ms": 0.28123958327341825,
+        "mean_candidates": 232.08333333333334
+      }
+    },
+    {
+      "factor": 0.25,
+      "chunks": 615,
+      "approximate": {
+        "mean_ms": 0.8234236399099851,
+        "mean_candidates": 247.79166666666666
+      },
+      "exact": {
+        "mean_ms": 0.552543502029342,
+        "mean_candidates": 463.375
+      }
+    },
+    {
+      "factor": 0.5,
+      "chunks": 1229,
+      "approximate": {
+        "mean_ms": 1.574128444190137,
+        "mean_candidates": 496.125
+      },
+      "exact": {
+        "mean_ms": 1.1529895806840311,
+        "mean_candidates": 928.5416666666666
+      }
+    },
+    {
+      "factor": 1.0,
+      "chunks": 2458,
+      "approximate": {
+        "mean_ms": 3.070610987682206,
+        "mean_candidates": 985.375
+      },
+      "exact": {
+        "mean_ms": 2.377911368967034,
+        "mean_candidates": 1853.875
+      }
+    },
+    {
+      "factor": 2.0,
+      "chunks": 4916,
+      "approximate": {
+        "mean_ms": 6.34789754015704,
+        "mean_candidates": 1970.75
+      },
+      "exact": {
+        "mean_ms": 5.019732513270962,
+        "mean_candidates": 3707.75
+      }
+    },
+    {
+      "factor": 4.0,
+      "chunks": 9832,
+      "approximate": {
+        "mean_ms": 13.202720593350628,
+        "mean_candidates": 3941.5
+      },
+      "exact": {
+        "mean_ms": 10.974822755088098,
+        "mean_candidates": 7415.5
+      }
+    }
+  ],
+  "results": [
+    {
+      "question": "What was NVIDIA data center revenue in fiscal 2025?",
+      "note": "",
+      "evidence_count": 1,
+      "filters": {
+        "ticker": "NVDA",
+        "fiscal_year": 2025
+      },
+      "approximate": {
+        "retrieval_ms": 1.5938750002533197,
+        "candidate_count": 223,
+        "retrieved": [
+          "NVDA_2025_10K_0255",
+          "NVDA_2025_10K_0144",
+          "NVDA_2025_10K_0256",
+          "NVDA_2025_10K_0154",
+          "NVDA_2025_10K_0149",
+          "NVDA_2025_10K_0165",
+          "NVDA_2025_10K_0155",
+          "NVDA_2025_10K_0251",
+          "NVDA_2025_10K_0257",
+          "NVDA_2025_10K_0062"
+        ],
+        "selected": [
+          "NVDA_2025_10K_0255",
+          "NVDA_2025_10K_0144",
+          "NVDA_2025_10K_0256",
+          "NVDA_2025_10K_0154"
+        ],
+        "selected_words": 972,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.1,
+          "first_rank": 1,
+          "useful": [
+            "NVDA_2025_10K_0255"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 0.25,
+          "first_rank": 1,
+          "useful": [
+            "NVDA_2025_10K_0255"
+          ]
+        },
+        "answer": "[1] NVIDIA data center revenue in fiscal 2025 was $115,186 million.",
+        "verdict": "correct",
+        "cited_sources": [
+          1
+        ],
+        "generation_ms": 3240.521457977593
+      },
+      "exact": {
+        "retrieval_ms": 3.8400000194087625,
+        "candidate_count": 264,
+        "retrieved": [
+          "NVDA_2025_10K_0154",
+          "NVDA_2025_10K_0233",
+          "NVDA_2025_10K_0145",
+          "NVDA_2025_10K_0165",
+          "NVDA_2025_10K_0254",
+          "NVDA_2025_10K_0166",
+          "NVDA_2025_10K_0017",
+          "NVDA_2025_10K_0163",
+          "NVDA_2025_10K_0232",
+          "NVDA_2025_10K_0164"
+        ],
+        "selected": [
+          "NVDA_2025_10K_0154",
+          "NVDA_2025_10K_0233",
+          "NVDA_2025_10K_0145",
+          "NVDA_2025_10K_0165"
+        ],
+        "selected_words": 926,
+        "retrieved_usefulness": {
+          "hit": false,
+          "precision": 0.0,
+          "first_rank": null,
+          "useful": []
+        },
+        "selected_usefulness": {
+          "hit": false,
+          "precision": 0.0,
+          "first_rank": null,
+          "useful": []
+        },
+        "answer": "[1] NVIDIA Corporation's data center revenue for fiscal year 2025 was up 142% from a year ago. [1]",
+        "verdict": "missed fact",
+        "cited_sources": [
+          1
+        ],
+        "generation_ms": 2648.301040986553
+      },
+      "retrieved_overlap": 0.1111111111111111,
+      "selected_overlap": 0.14285714285714285,
+      "same_context": false
+    },
+    {
+      "question": "How much did NVIDIA spend on research and development in fiscal 2024?",
+      "note": "",
+      "evidence_count": 3,
+      "filters": {
+        "ticker": "NVDA",
+        "fiscal_year": 2024
+      },
+      "approximate": {
+        "retrieval_ms": 1.7175840912386775,
+        "candidate_count": 190,
+        "retrieved": [
+          "NVDA_2024_10K_0212",
+          "NVDA_2024_10K_0219",
+          "NVDA_2024_10K_0233",
+          "NVDA_2024_10K_0228",
+          "NVDA_2024_10K_0038",
+          "NVDA_2024_10K_0227",
+          "NVDA_2024_10K_0037",
+          "NVDA_2024_10K_0147",
+          "NVDA_2024_10K_0159",
+          "NVDA_2024_10K_0105"
+        ],
+        "selected": [
+          "NVDA_2024_10K_0212",
+          "NVDA_2024_10K_0219",
+          "NVDA_2024_10K_0233",
+          "NVDA_2024_10K_0228"
+        ],
+        "selected_words": 982,
+        "retrieved_usefulness": {
+          "hit": false,
+          "precision": 0.0,
+          "first_rank": null,
+          "useful": []
+        },
+        "selected_usefulness": {
+          "hit": false,
+          "precision": 0.0,
+          "first_rank": null,
+          "useful": []
+        },
+        "answer": "[1] NVIDIA spent $2,532 million on research and development in fiscal 2024.",
+        "verdict": "missed fact",
+        "cited_sources": [
+          1
+        ],
+        "generation_ms": 2878.2762500923127
+      },
+      "exact": {
+        "retrieval_ms": 4.497874993830919,
+        "candidate_count": 258,
+        "retrieved": [
+          "NVDA_2024_10K_0227",
+          "NVDA_2024_10K_0147",
+          "NVDA_2024_10K_0005",
+          "NVDA_2024_10K_0038",
+          "NVDA_2024_10K_0100",
+          "NVDA_2024_10K_0146",
+          "NVDA_2024_10K_0150",
+          "NVDA_2024_10K_0158",
+          "NVDA_2024_10K_0190",
+          "NVDA_2024_10K_0224"
+        ],
+        "selected": [
+          "NVDA_2024_10K_0227",
+          "NVDA_2024_10K_0147",
+          "NVDA_2024_10K_0005",
+          "NVDA_2024_10K_0038"
+        ],
+        "selected_words": 984,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.1,
+          "first_rank": 8,
+          "useful": [
+            "NVDA_2024_10K_0158"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": false,
+          "precision": 0.0,
+          "first_rank": null,
+          "useful": []
+        },
+        "answer": "[NVIDIA Corporation (NVDA) 10-K, fiscal year 2024] The Compensation Committee of our Board of Directors assists in the oversight of policies and strategies relating to human capital management. [1] Research and development employees made up 22,200 out of 29,600 total employees, indicating that 75% of the workforce was involved in research and development. [1]",
+        "verdict": "missed fact",
+        "cited_sources": [
+          1
+        ],
+        "generation_ms": 4369.025334017351
+      },
+      "retrieved_overlap": 0.17647058823529413,
+      "selected_overlap": 0.0,
+      "same_context": false
+    },
+    {
+      "question": "Who does NVIDIA consider its main competitors?",
+      "note": "",
+      "evidence_count": 2,
+      "filters": {
+        "ticker": "NVDA",
+        "fiscal_year": null
+      },
+      "approximate": {
+        "retrieval_ms": 1.0226659942418337,
+        "candidate_count": 248,
+        "retrieved": [
+          "NVDA_2024_10K_0102",
+          "NVDA_2025_10K_0104",
+          "NVDA_2024_10K_0107",
+          "NVDA_2025_10K_0115",
+          "NVDA_2024_10K_0110",
+          "NVDA_2025_10K_0157",
+          "NVDA_2025_10K_0112",
+          "NVDA_2024_10K_0052",
+          "NVDA_2025_10K_0055",
+          "NVDA_2025_10K_0183"
+        ],
+        "selected": [
+          "NVDA_2024_10K_0102",
+          "NVDA_2024_10K_0107",
+          "NVDA_2025_10K_0115",
+          "NVDA_2025_10K_0157"
+        ],
+        "selected_words": 896,
+        "retrieved_usefulness": {
+          "hit": false,
+          "precision": 0.0,
+          "first_rank": null,
+          "useful": []
+        },
+        "selected_usefulness": {
+          "hit": false,
+          "precision": 0.0,
+          "first_rank": null,
+          "useful": []
+        },
+        "answer": "NVIDIA considers its competitors as those who sell products that are not subject to the new restrictions or may be able to acquire licenses for their products [2].",
+        "verdict": "answered",
+        "cited_sources": [
+          2
+        ],
+        "generation_ms": 2104.2618330102414
+      },
+      "exact": {
+        "retrieval_ms": 1.4529170002788305,
+        "candidate_count": 302,
+        "retrieved": [
+          "NVDA_2025_10K_0005",
+          "NVDA_2024_10K_0005",
+          "NVDA_2024_10K_0006",
+          "NVDA_2025_10K_0006",
+          "NVDA_2024_10K_0008",
+          "NVDA_2024_10K_0017",
+          "NVDA_2024_10K_0147",
+          "NVDA_2025_10K_0008",
+          "NVDA_2025_10K_0112",
+          "NVDA_2024_10K_0018"
+        ],
+        "selected": [
+          "NVDA_2025_10K_0005",
+          "NVDA_2024_10K_0006",
+          "NVDA_2024_10K_0008",
+          "NVDA_2024_10K_0017"
+        ],
+        "selected_words": 908,
+        "retrieved_usefulness": {
+          "hit": false,
+          "precision": 0.0,
+          "first_rank": null,
+          "useful": []
+        },
+        "selected_usefulness": {
+          "hit": false,
+          "precision": 0.0,
+          "first_rank": null,
+          "useful": []
+        },
+        "answer": "The provided filings do not contain this information.",
+        "verdict": "refused",
+        "cited_sources": [],
+        "generation_ms": 1714.2474160064012
+      },
+      "retrieved_overlap": 0.05263157894736842,
+      "selected_overlap": 0.0,
+      "same_context": false
+    },
+    {
+      "question": "nvidea gaming revenue",
+      "note": "typo in the company name",
+      "evidence_count": 7,
+      "filters": {
+        "ticker": null,
+        "fiscal_year": null
+      },
+      "approximate": {
+        "retrieval_ms": 3.305374993942678,
+        "candidate_count": 762,
+        "retrieved": [
+          "NVDA_2024_10K_0146",
+          "NVDA_2024_10K_0147",
+          "NVDA_2024_10K_0145",
+          "NVDA_2024_10K_0156",
+          "NVDA_2024_10K_0250",
+          "NVDA_2025_10K_0255",
+          "NVDA_2025_10K_0144",
+          "NVDA_2025_10K_0252",
+          "MSFT_2025_10K_0117",
+          "NVDA_2025_10K_0256"
+        ],
+        "selected": [
+          "NVDA_2024_10K_0146",
+          "NVDA_2024_10K_0147",
+          "NVDA_2024_10K_0145",
+          "NVDA_2024_10K_0156"
+        ],
+        "selected_words": 963,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.3,
+          "first_rank": 1,
+          "useful": [
+            "NVDA_2024_10K_0146",
+            "NVDA_2024_10K_0147",
+            "NVDA_2024_10K_0145"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 0.75,
+          "first_rank": 1,
+          "useful": [
+            "NVDA_2024_10K_0146",
+            "NVDA_2024_10K_0147",
+            "NVDA_2024_10K_0145"
+          ]
+        },
+        "answer": "Gaming revenue for fiscal year 2024 was $10.4 billion, up 15% from fiscal year 2023 [2].",
+        "verdict": "answered",
+        "cited_sources": [
+          2
+        ],
+        "generation_ms": 2880.6819579331204
+      },
+      "exact": {
+        "retrieval_ms": 0.8083749562501907,
+        "candidate_count": 607,
+        "retrieved": [
+          "AMD_2024_10K_0170",
+          "AMD_2025_10K_0178",
+          "AMD_2024_10K_0156",
+          "MSFT_2025_10K_0105",
+          "MSFT_2025_10K_0112",
+          "MSFT_2025_10K_0207",
+          "NVDA_2024_10K_0228",
+          "NVDA_2025_10K_0164",
+          "MSFT_2024_10K_0123",
+          "MSFT_2024_10K_0131"
+        ],
+        "selected": [
+          "AMD_2024_10K_0170",
+          "AMD_2025_10K_0178",
+          "AMD_2024_10K_0156",
+          "MSFT_2025_10K_0105"
+        ],
+        "selected_words": 954,
+        "retrieved_usefulness": {
+          "hit": false,
+          "precision": 0.0,
+          "first_rank": null,
+          "useful": []
+        },
+        "selected_usefulness": {
+          "hit": false,
+          "precision": 0.0,
+          "first_rank": null,
+          "useful": []
+        },
+        "answer": "The provided filings do not contain this information.",
+        "verdict": "refused",
+        "cited_sources": [],
+        "generation_ms": 1898.4474580502138
+      },
+      "retrieved_overlap": 0.0,
+      "selected_overlap": 0.0,
+      "same_context": false
+    },
+    {
+      "question": "What risks does AMD describe about export restrictions to China?",
+      "note": "",
+      "evidence_count": 16,
+      "filters": {
+        "ticker": "AMD",
+        "fiscal_year": null
+      },
+      "approximate": {
+        "retrieval_ms": 1.304958015680313,
+        "candidate_count": 242,
+        "retrieved": [
+          "AMD_2025_10K_0167",
+          "AMD_2025_10K_0107",
+          "AMD_2024_10K_0106",
+          "AMD_2025_10K_0106",
+          "AMD_2025_10K_0146",
+          "AMD_2024_10K_0141",
+          "AMD_2025_10K_0109",
+          "AMD_2024_10K_0108",
+          "AMD_2025_10K_0113",
+          "AMD_2024_10K_0107"
+        ],
+        "selected": [
+          "AMD_2025_10K_0167",
+          "AMD_2025_10K_0107",
+          "AMD_2024_10K_0106",
+          "AMD_2025_10K_0106"
+        ],
+        "selected_words": 934,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 1.0,
+          "first_rank": 1,
+          "useful": [
+            "AMD_2025_10K_0167",
+            "AMD_2025_10K_0107",
+            "AMD_2024_10K_0106",
+            "AMD_2025_10K_0106",
+            "AMD_2025_10K_0146",
+            "AMD_2024_10K_0141",
+            "AMD_2025_10K_0109",
+            "AMD_2024_10K_0108",
+            "AMD_2025_10K_0113",
+            "AMD_2024_10K_0107"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 1.0,
+          "first_rank": 1,
+          "useful": [
+            "AMD_2025_10K_0167",
+            "AMD_2025_10K_0107",
+            "AMD_2024_10K_0106",
+            "AMD_2025_10K_0106"
+          ]
+        },
+        "answer": "AMD describes risks associated with export restrictions to China in [1], [2], and [3]. These risks include limitations on selling certain products or technologies to China, potential delays in shipments due to licensing requirements, and the possibility of losing sales if new products are deemed subject to licensing requirements. Additionally, evolving U.S. government policy towards semiconductor exports could adversely affect AMD's business. [1]",
+        "verdict": "answered",
+        "cited_sources": [
+          1,
+          2,
+          3
+        ],
+        "generation_ms": 3622.3464999347925
+      },
+      "exact": {
+        "retrieval_ms": 3.6125830374658108,
+        "candidate_count": 589,
+        "retrieved": [
+          "AMD_2025_10K_0113",
+          "AMD_2025_10K_0107",
+          "AMD_2024_10K_0107",
+          "AMD_2025_10K_0027",
+          "AMD_2025_10K_0052",
+          "AMD_2025_10K_0106",
+          "AMD_2024_10K_0025",
+          "AMD_2024_10K_0045",
+          "AMD_2024_10K_0051",
+          "AMD_2024_10K_0052"
+        ],
+        "selected": [
+          "AMD_2025_10K_0113",
+          "AMD_2025_10K_0107",
+          "AMD_2024_10K_0107",
+          "AMD_2025_10K_0027"
+        ],
+        "selected_words": 974,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.4,
+          "first_rank": 1,
+          "useful": [
+            "AMD_2025_10K_0113",
+            "AMD_2025_10K_0107",
+            "AMD_2024_10K_0107",
+            "AMD_2025_10K_0106"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 0.75,
+          "first_rank": 1,
+          "useful": [
+            "AMD_2025_10K_0113",
+            "AMD_2025_10K_0107",
+            "AMD_2024_10K_0107"
+          ]
+        },
+        "answer": "AMD describes export restrictions to China as posing a threat to its ability to sell certain products or technologies in these markets or to certain customers [2]. These restrictions can limit the company's ability to ship certain AMD products to China or to customers outside the US who are headquartered in or have an ultimate parent headquartered in a country designated as a D5 Country [2]. This could lead to lost sales and potentially harm the company's reputation and business [2]. Additionally, the restrictions can make it easier for competitors in China to develop and sell their own solutions, reducing the demand for AMD products [2].",
+        "verdict": "answered",
+        "cited_sources": [
+          2
+        ],
+        "generation_ms": 4799.094207934104
+      },
+      "retrieved_overlap": 0.25,
+      "selected_overlap": 0.14285714285714285,
+      "same_context": false
+    },
+    {
+      "question": "How does AMD describe its data center segment?",
+      "note": "",
+      "evidence_count": 28,
+      "filters": {
+        "ticker": "AMD",
+        "fiscal_year": null
+      },
+      "approximate": {
+        "retrieval_ms": 1.2742079561576247,
+        "candidate_count": 236,
+        "retrieved": [
+          "AMD_2025_10K_0161",
+          "AMD_2025_10K_0228",
+          "AMD_2024_10K_0156",
+          "AMD_2024_10K_0012",
+          "AMD_2024_10K_0014",
+          "AMD_2024_10K_0157",
+          "AMD_2025_10K_0014",
+          "AMD_2024_10K_0015",
+          "AMD_2025_10K_0163",
+          "AMD_2025_10K_0229"
+        ],
+        "selected": [
+          "AMD_2025_10K_0161",
+          "AMD_2025_10K_0228",
+          "AMD_2024_10K_0156",
+          "AMD_2024_10K_0012"
+        ],
+        "selected_words": 927,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.9,
+          "first_rank": 2,
+          "useful": [
+            "AMD_2025_10K_0228",
+            "AMD_2024_10K_0156",
+            "AMD_2024_10K_0012",
+            "AMD_2024_10K_0014",
+            "AMD_2024_10K_0157",
+            "AMD_2025_10K_0014",
+            "AMD_2024_10K_0015",
+            "AMD_2025_10K_0163",
+            "AMD_2025_10K_0229"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 0.75,
+          "first_rank": 2,
+          "useful": [
+            "AMD_2025_10K_0228",
+            "AMD_2024_10K_0156",
+            "AMD_2024_10K_0012"
+          ]
+        },
+        "answer": "AMD describes its data center segment as driving strong revenue growth with net revenue increasing 14% to $25.8 billion in 2024 [3], and further increasing by 32% to $16.6 billion in 2025 [1]. The segment's growth was primarily driven by higher sales of AMD Instinct™ GPUs and AMD EPYC™ CPUs in 2024 [3] and 5th generation AMD EPYC™ processors in 2025 [1].",
+        "verdict": "answered",
+        "cited_sources": [
+          1,
+          3
+        ],
+        "generation_ms": 4633.312749909237
+      },
+      "exact": {
+        "retrieval_ms": 1.8100000452250242,
+        "candidate_count": 339,
+        "retrieved": [
+          "AMD_2024_10K_0015",
+          "AMD_2024_10K_0014",
+          "AMD_2025_10K_0014",
+          "AMD_2025_10K_0027",
+          "AMD_2025_10K_0015",
+          "AMD_2025_10K_0220",
+          "AMD_2024_10K_0025",
+          "AMD_2025_10K_0011",
+          "AMD_2025_10K_0163",
+          "AMD_2025_10K_0229"
+        ],
+        "selected": [
+          "AMD_2024_10K_0015",
+          "AMD_2024_10K_0014",
+          "AMD_2025_10K_0027",
+          "AMD_2025_10K_0015"
+        ],
+        "selected_words": 927,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.7,
+          "first_rank": 1,
+          "useful": [
+            "AMD_2024_10K_0015",
+            "AMD_2024_10K_0014",
+            "AMD_2025_10K_0014",
+            "AMD_2025_10K_0220",
+            "AMD_2025_10K_0011",
+            "AMD_2025_10K_0163",
+            "AMD_2025_10K_0229"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 0.5,
+          "first_rank": 1,
+          "useful": [
+            "AMD_2024_10K_0015",
+            "AMD_2024_10K_0014"
+          ]
+        },
+        "answer": "AMD describes its data center segment as primarily including server-class CPUs, GPUs, AI accelerators, DPUs, FPGAs, SmartNICs, and Adaptive SoC products for data centers [1]. It also mentions that the Data Center segment primarily includes AI accelerators, server CPUs, GPUs, APUs, DPUs, FPGAs, SmartNICs, and Adaptive SoC products [2].",
+        "verdict": "answered",
+        "cited_sources": [
+          1,
+          2
+        ],
+        "generation_ms": 3938.794792047702
+      },
+      "retrieved_overlap": 0.3333333333333333,
+      "selected_overlap": 0.0,
+      "same_context": false
+    },
+    {
+      "question": "What does AMD say about the acquisition of ZT Systems?",
+      "note": "",
+      "evidence_count": 22,
+      "filters": {
+        "ticker": "AMD",
+        "fiscal_year": null
+      },
+      "approximate": {
+        "retrieval_ms": 2.1985829807817936,
+        "candidate_count": 401,
+        "retrieved": [
+          "AMD_2024_10K_0008",
+          "AMD_2025_10K_0139",
+          "AMD_2025_10K_0228",
+          "AMD_2024_10K_0013",
+          "AMD_2025_10K_0165",
+          "AMD_2024_10K_0177",
+          "AMD_2025_10K_0223",
+          "AMD_2024_10K_0159",
+          "AMD_2024_10K_0215",
+          "AMD_2025_10K_0012"
+        ],
+        "selected": [
+          "AMD_2024_10K_0008",
+          "AMD_2025_10K_0139",
+          "AMD_2025_10K_0228",
+          "AMD_2024_10K_0013"
+        ],
+        "selected_words": 856,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 1.0,
+          "first_rank": 1,
+          "useful": [
+            "AMD_2024_10K_0008",
+            "AMD_2025_10K_0139",
+            "AMD_2025_10K_0228",
+            "AMD_2024_10K_0013",
+            "AMD_2025_10K_0165",
+            "AMD_2024_10K_0177",
+            "AMD_2025_10K_0223",
+            "AMD_2024_10K_0159",
+            "AMD_2024_10K_0215",
+            "AMD_2025_10K_0012"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 1.0,
+          "first_rank": 1,
+          "useful": [
+            "AMD_2024_10K_0008",
+            "AMD_2025_10K_0139",
+            "AMD_2025_10K_0228",
+            "AMD_2024_10K_0013"
+          ]
+        },
+        "answer": "AMD intends to seek a strategic partner to acquire ZT Systems' manufacturing business [2]. Additionally, the acquisition of ZT Systems is expected to close in the first half of fiscal year 2025, subject to certain regulatory approvals and other customary closing conditions [4].",
+        "verdict": "answered",
+        "cited_sources": [
+          2,
+          4
+        ],
+        "generation_ms": 2975.365375052206
+      },
+      "exact": {
+        "retrieval_ms": 4.038791987113655,
+        "candidate_count": 592,
+        "retrieved": [
+          "AMD_2025_10K_0238",
+          "AMD_2025_10K_0227",
+          "AMD_2025_10K_0228",
+          "AMD_2024_10K_0137",
+          "AMD_2024_10K_0216",
+          "AMD_2025_10K_0225",
+          "AMD_2025_10K_0237",
+          "AMD_2025_10K_0248",
+          "AMD_2024_10K_0215",
+          "AMD_2024_10K_0225"
+        ],
+        "selected": [
+          "AMD_2025_10K_0238",
+          "AMD_2025_10K_0227",
+          "AMD_2025_10K_0228",
+          "AMD_2024_10K_0137"
+        ],
+        "selected_words": 905,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.5,
+          "first_rank": 3,
+          "useful": [
+            "AMD_2025_10K_0228",
+            "AMD_2024_10K_0137",
+            "AMD_2024_10K_0216",
+            "AMD_2025_10K_0225",
+            "AMD_2024_10K_0215"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 0.5,
+          "first_rank": 3,
+          "useful": [
+            "AMD_2025_10K_0228",
+            "AMD_2024_10K_0137"
+          ]
+        },
+        "answer": "AMD says the acquisition of ZT Systems is expected to occur in the first half of 2025 [4]. It is subject to the satisfaction or waiver of a number of customary conditions as specified in the purchase agreement, including receipt of certain specified required regulatory approvals and the absence of laws or orders restraining the consummation of the Agreement [4]. Any delay in completing the Acquisition could cause AMD to not realize, or to be delayed in realizing, some or all of the benefits they expect to achieve from this transaction [4].",
+        "verdict": "answered",
+        "cited_sources": [
+          4
+        ],
+        "generation_ms": 4605.924958013929
+      },
+      "retrieved_overlap": 0.1111111111111111,
+      "selected_overlap": 0.14285714285714285,
+      "same_context": false
+    },
+    {
+      "question": "How much did Microsoft Azure and other cloud services revenue grow in fiscal 2025?",
+      "note": "",
+      "evidence_count": 3,
+      "filters": {
+        "ticker": "MSFT",
+        "fiscal_year": 2025
+      },
+      "approximate": {
+        "retrieval_ms": 2.3457080824300647,
+        "candidate_count": 223,
+        "retrieved": [
+          "MSFT_2025_10K_0113",
+          "MSFT_2025_10K_0105",
+          "MSFT_2025_10K_0208",
+          "MSFT_2025_10K_0116",
+          "MSFT_2025_10K_0114",
+          "MSFT_2025_10K_0112",
+          "MSFT_2025_10K_0110",
+          "MSFT_2025_10K_0115",
+          "MSFT_2025_10K_0111",
+          "MSFT_2025_10K_0104"
+        ],
+        "selected": [
+          "MSFT_2025_10K_0113",
+          "MSFT_2025_10K_0105",
+          "MSFT_2025_10K_0208",
+          "MSFT_2025_10K_0116"
+        ],
+        "selected_words": 948,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.3,
+          "first_rank": 2,
+          "useful": [
+            "MSFT_2025_10K_0105",
+            "MSFT_2025_10K_0116",
+            "MSFT_2025_10K_0112"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 0.5,
+          "first_rank": 2,
+          "useful": [
+            "MSFT_2025_10K_0105",
+            "MSFT_2025_10K_0116"
+          ]
+        },
+        "answer": "Microsoft Azure and other cloud services revenue grew 34% in fiscal 2025 [1].",
+        "verdict": "correct",
+        "cited_sources": [
+          1
+        ],
+        "generation_ms": 2624.242875026539
+      },
+      "exact": {
+        "retrieval_ms": 4.779667011462152,
+        "candidate_count": 235,
+        "retrieved": [
+          "MSFT_2025_10K_0112",
+          "MSFT_2025_10K_0105",
+          "MSFT_2025_10K_0205",
+          "MSFT_2025_10K_0111",
+          "MSFT_2025_10K_0016",
+          "MSFT_2025_10K_0208",
+          "MSFT_2025_10K_0012",
+          "MSFT_2025_10K_0116",
+          "MSFT_2025_10K_0115",
+          "MSFT_2025_10K_0113"
+        ],
+        "selected": [
+          "MSFT_2025_10K_0112",
+          "MSFT_2025_10K_0105",
+          "MSFT_2025_10K_0205",
+          "MSFT_2025_10K_0111"
+        ],
+        "selected_words": 956,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.3,
+          "first_rank": 1,
+          "useful": [
+            "MSFT_2025_10K_0112",
+            "MSFT_2025_10K_0105",
+            "MSFT_2025_10K_0116"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 0.5,
+          "first_rank": 1,
+          "useful": [
+            "MSFT_2025_10K_0112",
+            "MSFT_2025_10K_0105"
+          ]
+        },
+        "answer": "[4] Server products and cloud services revenue increased 23% driven by Azure and other cloud services revenue growth of 34%. [4]",
+        "verdict": "correct",
+        "cited_sources": [
+          4
+        ],
+        "generation_ms": 2445.87487494573
+      },
+      "retrieved_overlap": 0.5384615384615384,
+      "selected_overlap": 0.14285714285714285,
+      "same_context": false
+    },
+    {
+      "question": "What does Microsoft say about its investments in artificial intelligence?",
+      "note": "",
+      "evidence_count": 41,
+      "filters": {
+        "ticker": "MSFT",
+        "fiscal_year": null
+      },
+      "approximate": {
+        "retrieval_ms": 2.379792043939233,
+        "candidate_count": 406,
+        "retrieved": [
+          "MSFT_2024_10K_0122",
+          "MSFT_2024_10K_0060",
+          "MSFT_2025_10K_0104",
+          "MSFT_2024_10K_0203",
+          "MSFT_2025_10K_0045",
+          "MSFT_2024_10K_0006",
+          "MSFT_2025_10K_0006",
+          "MSFT_2024_10K_0012",
+          "MSFT_2024_10K_0011",
+          "MSFT_2024_10K_0256"
+        ],
+        "selected": [
+          "MSFT_2024_10K_0122",
+          "MSFT_2024_10K_0060",
+          "MSFT_2024_10K_0203",
+          "MSFT_2024_10K_0006"
+        ],
+        "selected_words": 966,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.6,
+          "first_rank": 1,
+          "useful": [
+            "MSFT_2024_10K_0122",
+            "MSFT_2024_10K_0060",
+            "MSFT_2025_10K_0104",
+            "MSFT_2025_10K_0045",
+            "MSFT_2024_10K_0012",
+            "MSFT_2024_10K_0011"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 0.5,
+          "first_rank": 1,
+          "useful": [
+            "MSFT_2024_10K_0122",
+            "MSFT_2024_10K_0060"
+          ]
+        },
+        "answer": "Microsoft invests in artificial intelligence across the entire company and infuses generative AI capabilities into its consumer and commercial offerings [2].",
+        "verdict": "answered",
+        "cited_sources": [
+          2
+        ],
+        "generation_ms": 2305.6151249911636
+      },
+      "exact": {
+        "retrieval_ms": 3.5973750054836273,
+        "candidate_count": 497,
+        "retrieved": [
+          "MSFT_2025_10K_0115",
+          "MSFT_2025_10K_0116",
+          "MSFT_2025_10K_0170",
+          "MSFT_2024_10K_0191",
+          "MSFT_2025_10K_0083",
+          "MSFT_2024_10K_0101",
+          "MSFT_2024_10K_0194",
+          "MSFT_2024_10K_0222",
+          "MSFT_2025_10K_0111",
+          "MSFT_2024_10K_0053"
+        ],
+        "selected": [
+          "MSFT_2025_10K_0115",
+          "MSFT_2025_10K_0116",
+          "MSFT_2025_10K_0170",
+          "MSFT_2024_10K_0191"
+        ],
+        "selected_words": 978,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.1,
+          "first_rank": 2,
+          "useful": [
+            "MSFT_2025_10K_0116"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 0.25,
+          "first_rank": 2,
+          "useful": [
+            "MSFT_2025_10K_0116"
+          ]
+        },
+        "answer": "Microsoft says the gross margin percentage decreased slightly primarily driven by the impact of scaling their AI infrastructure, offset in part by efficiency gains in Microsoft 365 Commercial cloud [1].",
+        "verdict": "answered",
+        "cited_sources": [
+          1
+        ],
+        "generation_ms": 3527.775917085819
+      },
+      "retrieved_overlap": 0.0,
+      "selected_overlap": 0.0,
+      "same_context": false
+    },
+    {
+      "question": "microsft cloud revenue",
+      "note": "typo in the company name",
+      "evidence_count": 8,
+      "filters": {
+        "ticker": null,
+        "fiscal_year": null
+      },
+      "approximate": {
+        "retrieval_ms": 3.480082959868014,
+        "candidate_count": 820,
+        "retrieved": [
+          "MSFT_2024_10K_0129",
+          "MSFT_2025_10K_0111",
+          "MSFT_2025_10K_0113",
+          "MSFT_2024_10K_0123",
+          "MSFT_2025_10K_0114",
+          "MSFT_2024_10K_0132",
+          "MSFT_2025_10K_0105",
+          "MSFT_2025_10K_0116",
+          "MSFT_2024_10K_0128",
+          "MSFT_2025_10K_0208"
+        ],
+        "selected": [
+          "MSFT_2024_10K_0129",
+          "MSFT_2025_10K_0113",
+          "MSFT_2024_10K_0123",
+          "MSFT_2025_10K_0114"
+        ],
+        "selected_words": 918,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.6,
+          "first_rank": 1,
+          "useful": [
+            "MSFT_2024_10K_0129",
+            "MSFT_2025_10K_0111",
+            "MSFT_2024_10K_0123",
+            "MSFT_2025_10K_0105",
+            "MSFT_2024_10K_0128",
+            "MSFT_2025_10K_0208"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 0.5,
+          "first_rank": 1,
+          "useful": [
+            "MSFT_2024_10K_0129",
+            "MSFT_2024_10K_0123"
+          ]
+        },
+        "answer": "Microsoft Cloud revenue increased 23% to $137.4 billion in fiscal year 2024 [3]. In fiscal year 2025, Microsoft Cloud revenue increased 21% to $106,265 million [4].",
+        "verdict": "answered",
+        "cited_sources": [
+          3,
+          4
+        ],
+        "generation_ms": 3628.977374988608
+      },
+      "exact": {
+        "retrieval_ms": 1.0633750353008509,
+        "candidate_count": 728,
+        "retrieved": [
+          "MSFT_2024_10K_0129",
+          "MSFT_2025_10K_0111",
+          "MSFT_2025_10K_0105",
+          "MSFT_2025_10K_0112",
+          "MSFT_2024_10K_0123",
+          "MSFT_2024_10K_0134",
+          "MSFT_2025_10K_0115",
+          "MSFT_2025_10K_0113",
+          "MSFT_2025_10K_0116",
+          "MSFT_2024_10K_0131"
+        ],
+        "selected": [
+          "MSFT_2024_10K_0129",
+          "MSFT_2025_10K_0105",
+          "MSFT_2025_10K_0112",
+          "MSFT_2024_10K_0123"
+        ],
+        "selected_words": 938,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.4,
+          "first_rank": 1,
+          "useful": [
+            "MSFT_2024_10K_0129",
+            "MSFT_2025_10K_0111",
+            "MSFT_2025_10K_0105",
+            "MSFT_2024_10K_0123"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 0.75,
+          "first_rank": 1,
+          "useful": [
+            "MSFT_2024_10K_0129",
+            "MSFT_2025_10K_0105",
+            "MSFT_2024_10K_0123"
+          ]
+        },
+        "answer": "Microsoft Cloud revenue increased 23% to $168.9 billion [2].",
+        "verdict": "answered",
+        "cited_sources": [
+          2
+        ],
+        "generation_ms": 2122.6650829194114
+      },
+      "retrieved_overlap": 0.42857142857142855,
+      "selected_overlap": 0.3333333333333333,
+      "same_context": false
+    },
+    {
+      "question": "What does Apple say about iPhone net sales in fiscal 2025?",
+      "note": "",
+      "evidence_count": 1,
+      "filters": {
+        "ticker": "AAPL",
+        "fiscal_year": 2025
+      },
+      "approximate": {
+        "retrieval_ms": 1.8237089971080422,
+        "candidate_count": 144,
+        "retrieved": [
+          "AAPL_2025_10K_0084",
+          "AAPL_2025_10K_0083",
+          "AAPL_2025_10K_0108",
+          "AAPL_2025_10K_0107",
+          "AAPL_2025_10K_0065",
+          "AAPL_2025_10K_0095",
+          "AAPL_2025_10K_0086",
+          "AAPL_2025_10K_0081",
+          "AAPL_2025_10K_0085",
+          "AAPL_2025_10K_0096"
+        ],
+        "selected": [
+          "AAPL_2025_10K_0084",
+          "AAPL_2025_10K_0083",
+          "AAPL_2025_10K_0108",
+          "AAPL_2025_10K_0107"
+        ],
+        "selected_words": 964,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.1,
+          "first_rank": 1,
+          "useful": [
+            "AAPL_2025_10K_0084"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 0.25,
+          "first_rank": 1,
+          "useful": [
+            "AAPL_2025_10K_0084"
+          ]
+        },
+        "answer": "Apple says iPhone net sales increased during 2025 compared to 2024 primarily due to higher net sales of Pro models [1].",
+        "verdict": "answered",
+        "cited_sources": [
+          1
+        ],
+        "generation_ms": 3526.9397920928895
+      },
+      "exact": {
+        "retrieval_ms": 3.7901659961789846,
+        "candidate_count": 154,
+        "retrieved": [
+          "AAPL_2025_10K_0083",
+          "AAPL_2025_10K_0084",
+          "AAPL_2025_10K_0107",
+          "AAPL_2025_10K_0097",
+          "AAPL_2025_10K_0080",
+          "AAPL_2025_10K_0086",
+          "AAPL_2025_10K_0132",
+          "AAPL_2025_10K_0096",
+          "AAPL_2025_10K_0133",
+          "AAPL_2025_10K_0081"
+        ],
+        "selected": [
+          "AAPL_2025_10K_0083",
+          "AAPL_2025_10K_0084",
+          "AAPL_2025_10K_0107",
+          "AAPL_2025_10K_0097"
+        ],
+        "selected_words": 960,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.1,
+          "first_rank": 2,
+          "useful": [
+            "AAPL_2025_10K_0084"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 0.25,
+          "first_rank": 2,
+          "useful": [
+            "AAPL_2025_10K_0084"
+          ]
+        },
+        "answer": "Apple says iPhone net sales increased during 2025 compared to 2024 due to higher net sales of Pro models [2].",
+        "verdict": "answered",
+        "cited_sources": [
+          2
+        ],
+        "generation_ms": 3804.362209048122
+      },
+      "retrieved_overlap": 0.42857142857142855,
+      "selected_overlap": 0.6,
+      "same_context": false
+    },
+    {
+      "question": "How does Apple describe its services revenue?",
+      "note": "",
+      "evidence_count": 8,
+      "filters": {
+        "ticker": "AAPL",
+        "fiscal_year": null
+      },
+      "approximate": {
+        "retrieval_ms": 1.5740420203655958,
+        "candidate_count": 226,
+        "retrieved": [
+          "AAPL_2024_10K_0039",
+          "AAPL_2025_10K_0039",
+          "AAPL_2024_10K_0103",
+          "AAPL_2024_10K_0100",
+          "AAPL_2024_10K_0060",
+          "AAPL_2025_10K_0107",
+          "AAPL_2025_10K_0051",
+          "AAPL_2025_10K_0103",
+          "AAPL_2024_10K_0081",
+          "AAPL_2025_10K_0052"
+        ],
+        "selected": [
+          "AAPL_2024_10K_0039",
+          "AAPL_2024_10K_0103",
+          "AAPL_2024_10K_0100",
+          "AAPL_2024_10K_0060"
+        ],
+        "selected_words": 900,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.3,
+          "first_rank": 3,
+          "useful": [
+            "AAPL_2024_10K_0103",
+            "AAPL_2024_10K_0100",
+            "AAPL_2025_10K_0107"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 0.5,
+          "first_rank": 2,
+          "useful": [
+            "AAPL_2024_10K_0103",
+            "AAPL_2024_10K_0100"
+          ]
+        },
+        "answer": "Apple describes its services revenue as recognizing revenue at the amount to which it expects to be entitled when control of the products or services is transferred to its customers [3]. Services net sales include amortization of the deferred value of services bundled in the sales price of certain products [2]. Services net sales are disaggregated by significant products and services for 2024, 2023, and 2022, showing figures for iPhone, Mac, iPad, Wearables, Home and Accessories, and Services [2]. Revenue from services is recognized over time as services are delivered [3].",
+        "verdict": "answered",
+        "cited_sources": [
+          2,
+          3
+        ],
+        "generation_ms": 5086.305417004041
+      },
+      "exact": {
+        "retrieval_ms": 2.441333024762571,
+        "candidate_count": 286,
+        "retrieved": [
+          "AAPL_2024_10K_0008",
+          "AAPL_2025_10K_0008",
+          "AAPL_2024_10K_0102",
+          "AAPL_2024_10K_0009",
+          "AAPL_2024_10K_0044",
+          "AAPL_2025_10K_0009",
+          "AAPL_2025_10K_0015",
+          "AAPL_2025_10K_0106",
+          "AAPL_2024_10K_0014",
+          "AAPL_2024_10K_0103"
+        ],
+        "selected": [
+          "AAPL_2024_10K_0008",
+          "AAPL_2024_10K_0102",
+          "AAPL_2024_10K_0009",
+          "AAPL_2024_10K_0044"
+        ],
+        "selected_words": 936,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.1,
+          "first_rank": 10,
+          "useful": [
+            "AAPL_2024_10K_0103"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": false,
+          "precision": 0.0,
+          "first_rank": null,
+          "useful": []
+        },
+        "answer": "Apple describes its services revenue as being derived from third-party licensing arrangements and its own advertising platforms [1]. Services revenue is allocated to all performance obligations based on their relative standalone selling prices [2]. Revenue allocated to the delivered hardware and bundled software is recognized when control transfers to the customer, typically upon shipment [2]. For product-related bundled services, revenue is deferred and recognized on a straight-line basis over the estimated period they are expected to be provided [2]. For long-term service arrangements, if the Company has performance obligations for undelivered services, it does not recognize revenue related to these undelivered services since they relate entirely to the value of the undelivered services [2]. Revenue from the sale of third-party products where the Company obtains control of the product before transferring it to the customer is recognized based on the gross amount billed to customers [2].",
+        "verdict": "answered",
+        "cited_sources": [
+          1,
+          2
+        ],
+        "generation_ms": 6461.08366700355
+      },
+      "retrieved_overlap": 0.05263157894736842,
+      "selected_overlap": 0.0,
+      "same_context": false
+    },
+    {
+      "question": "How many employees does Apple have?",
+      "note": "the filing says 'the Company', not 'Apple'",
+      "evidence_count": 2,
+      "filters": {
+        "ticker": "AAPL",
+        "fiscal_year": null
+      },
+      "approximate": {
+        "retrieval_ms": 0.9865419706329703,
+        "candidate_count": 199,
+        "retrieved": [
+          "AAPL_2025_10K_0043",
+          "AAPL_2025_10K_0047",
+          "AAPL_2025_10K_0120",
+          "AAPL_2024_10K_0021",
+          "AAPL_2024_10K_0122",
+          "AAPL_2024_10K_0055",
+          "AAPL_2024_10K_0123",
+          "AAPL_2025_10K_0021",
+          "AAPL_2025_10K_0015",
+          "AAPL_2024_10K_0017"
+        ],
+        "selected": [
+          "AAPL_2025_10K_0043",
+          "AAPL_2025_10K_0047",
+          "AAPL_2025_10K_0120",
+          "AAPL_2024_10K_0021"
+        ],
+        "selected_words": 901,
+        "retrieved_usefulness": {
+          "hit": false,
+          "precision": 0.0,
+          "first_rank": null,
+          "useful": []
+        },
+        "selected_usefulness": {
+          "hit": false,
+          "precision": 0.0,
+          "first_rank": null,
+          "useful": []
+        },
+        "answer": "The provided filings do not contain this information. [1]",
+        "verdict": "refused",
+        "cited_sources": [
+          1
+        ],
+        "generation_ms": 1950.5037920316681
+      },
+      "exact": {
+        "retrieval_ms": 2.33729206956923,
+        "candidate_count": 246,
+        "retrieved": [
+          "AAPL_2024_10K_0008",
+          "AAPL_2025_10K_0008",
+          "AAPL_2024_10K_0009",
+          "AAPL_2025_10K_0009",
+          "AAPL_2025_10K_0081",
+          "AAPL_2024_10K_0016",
+          "AAPL_2024_10K_0133",
+          "AAPL_2025_10K_0017",
+          "AAPL_2025_10K_0029",
+          "AAPL_2025_10K_0070"
+        ],
+        "selected": [
+          "AAPL_2024_10K_0008",
+          "AAPL_2024_10K_0009",
+          "AAPL_2025_10K_0081",
+          "AAPL_2024_10K_0016"
+        ],
+        "selected_words": 921,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.2,
+          "first_rank": 6,
+          "useful": [
+            "AAPL_2024_10K_0016",
+            "AAPL_2025_10K_0017"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 0.25,
+          "first_rank": 4,
+          "useful": [
+            "AAPL_2024_10K_0016"
+          ]
+        },
+        "answer": "Apple has approximately 164,000 full-time equivalent employees [4].",
+        "verdict": "correct",
+        "cited_sources": [
+          4
+        ],
+        "generation_ms": 2046.4682079618797
+      },
+      "retrieved_overlap": 0.0,
+      "selected_overlap": 0.0,
+      "same_context": false
+    },
+    {
+      "question": "What risks does Apple describe about manufacturing in China?",
+      "note": "",
+      "evidence_count": 7,
+      "filters": {
+        "ticker": "AAPL",
+        "fiscal_year": null
+      },
+      "approximate": {
+        "retrieval_ms": 1.370374928228557,
+        "candidate_count": 226,
+        "retrieved": [
+          "AAPL_2024_10K_0065",
+          "AAPL_2025_10K_0034",
+          "AAPL_2025_10K_0035",
+          "AAPL_2024_10K_0064",
+          "AAPL_2024_10K_0030",
+          "AAPL_2025_10K_0130",
+          "AAPL_2024_10K_0024",
+          "AAPL_2024_10K_0081",
+          "AAPL_2024_10K_0129",
+          "AAPL_2025_10K_0030"
+        ],
+        "selected": [
+          "AAPL_2024_10K_0065",
+          "AAPL_2025_10K_0034",
+          "AAPL_2025_10K_0035",
+          "AAPL_2024_10K_0064"
+        ],
+        "selected_words": 971,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.2,
+          "first_rank": 5,
+          "useful": [
+            "AAPL_2024_10K_0030",
+            "AAPL_2025_10K_0130"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": false,
+          "precision": 0.0,
+          "first_rank": null,
+          "useful": []
+        },
+        "answer": "The provided filings do not contain this information. [1]",
+        "verdict": "refused",
+        "cited_sources": [
+          1
+        ],
+        "generation_ms": 1809.9964590510353
+      },
+      "exact": {
+        "retrieval_ms": 3.7020420422777534,
+        "candidate_count": 305,
+        "retrieved": [
+          "AAPL_2025_10K_0112",
+          "AAPL_2024_10K_0094",
+          "AAPL_2025_10K_0019",
+          "AAPL_2024_10K_0009",
+          "AAPL_2024_10K_0059",
+          "AAPL_2024_10K_0104",
+          "AAPL_2025_10K_0009",
+          "AAPL_2025_10K_0032",
+          "AAPL_2025_10K_0058",
+          "AAPL_2025_10K_0133"
+        ],
+        "selected": [
+          "AAPL_2025_10K_0112",
+          "AAPL_2024_10K_0094",
+          "AAPL_2025_10K_0019",
+          "AAPL_2024_10K_0009"
+        ],
+        "selected_words": 940,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.1,
+          "first_rank": 8,
+          "useful": [
+            "AAPL_2025_10K_0032"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": false,
+          "precision": 0.0,
+          "first_rank": null,
+          "useful": []
+        },
+        "answer": "The provided filings do not contain this information.",
+        "verdict": "refused",
+        "cited_sources": [],
+        "generation_ms": 2266.539624892175
+      },
+      "retrieved_overlap": 0.0,
+      "selected_overlap": 0.0,
+      "same_context": false
+    },
+    {
+      "question": "What are Alphabet's main sources of revenue?",
+      "note": "",
+      "evidence_count": 6,
+      "filters": {
+        "ticker": "GOOGL",
+        "fiscal_year": null
+      },
+      "approximate": {
+        "retrieval_ms": 0.6421669386327267,
+        "candidate_count": 84,
+        "retrieved": [
+          "GOOGL_2025_10K_0184",
+          "GOOGL_2024_10K_0197",
+          "GOOGL_2024_10K_0008",
+          "GOOGL_2024_10K_0025",
+          "GOOGL_2025_10K_0119",
+          "GOOGL_2024_10K_0103",
+          "GOOGL_2024_10K_0129",
+          "GOOGL_2025_10K_0111",
+          "GOOGL_2025_10K_0100",
+          "GOOGL_2025_10K_0185"
+        ],
+        "selected": [
+          "GOOGL_2025_10K_0184",
+          "GOOGL_2024_10K_0008",
+          "GOOGL_2024_10K_0025",
+          "GOOGL_2025_10K_0119"
+        ],
+        "selected_words": 979,
+        "retrieved_usefulness": {
+          "hit": false,
+          "precision": 0.0,
+          "first_rank": null,
+          "useful": []
+        },
+        "selected_usefulness": {
+          "hit": false,
+          "precision": 0.0,
+          "first_rank": null,
+          "useful": []
+        },
+        "answer": "Alphabet's main sources of revenue include Google Cloud and Google subscriptions, platforms, and devices [1]. Revenue from TAC (Transaction Advertising Cost) increased significantly from 2024 to 2025, contributing to overall cost of revenues [4]. Other cost of revenues also saw an increase, primarily due to content acquisition costs, depreciation expense, and other technical infrastructure operations costs [4].",
+        "verdict": "answered",
+        "cited_sources": [
+          1,
+          4
+        ],
+        "generation_ms": 4020.822709077038
+      },
+      "exact": {
+        "retrieval_ms": 3.6923750303685665,
+        "candidate_count": 528,
+        "retrieved": [
+          "GOOGL_2024_10K_0236",
+          "GOOGL_2025_10K_0129",
+          "GOOGL_2025_10K_0194",
+          "GOOGL_2024_10K_0165",
+          "GOOGL_2025_10K_0152",
+          "GOOGL_2025_10K_0228",
+          "GOOGL_2024_10K_0137",
+          "GOOGL_2025_10K_0004",
+          "GOOGL_2025_10K_0005",
+          "GOOGL_2025_10K_0227"
+        ],
+        "selected": [
+          "GOOGL_2024_10K_0236",
+          "GOOGL_2025_10K_0129",
+          "GOOGL_2025_10K_0194",
+          "GOOGL_2024_10K_0165"
+        ],
+        "selected_words": 937,
+        "retrieved_usefulness": {
+          "hit": false,
+          "precision": 0.0,
+          "first_rank": null,
+          "useful": []
+        },
+        "selected_usefulness": {
+          "hit": false,
+          "precision": 0.0,
+          "first_rank": null,
+          "useful": []
+        },
+        "answer": "The provided filings do not contain this information.",
+        "verdict": "refused",
+        "cited_sources": [],
+        "generation_ms": 1836.193999974057
+      },
+      "retrieved_overlap": 0.0,
+      "selected_overlap": 0.0,
+      "same_context": false
+    },
+    {
+      "question": "What does Google say about YouTube advertising revenue?",
+      "note": "",
+      "evidence_count": 9,
+      "filters": {
+        "ticker": "GOOGL",
+        "fiscal_year": null
+      },
+      "approximate": {
+        "retrieval_ms": 2.519040950573981,
+        "candidate_count": 359,
+        "retrieved": [
+          "GOOGL_2024_10K_0114",
+          "GOOGL_2025_10K_0106",
+          "GOOGL_2024_10K_0172",
+          "GOOGL_2024_10K_0116",
+          "GOOGL_2025_10K_0108",
+          "GOOGL_2024_10K_0043",
+          "GOOGL_2025_10K_0101",
+          "GOOGL_2024_10K_0118",
+          "GOOGL_2024_10K_0109",
+          "GOOGL_2025_10K_0110"
+        ],
+        "selected": [
+          "GOOGL_2024_10K_0114",
+          "GOOGL_2024_10K_0172",
+          "GOOGL_2024_10K_0116",
+          "GOOGL_2024_10K_0043"
+        ],
+        "selected_words": 930,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.2,
+          "first_rank": 1,
+          "useful": [
+            "GOOGL_2024_10K_0114",
+            "GOOGL_2025_10K_0106"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 0.25,
+          "first_rank": 1,
+          "useful": [
+            "GOOGL_2024_10K_0114"
+          ]
+        },
+        "answer": "YouTube advertising revenue is part of Google's Google advertising revenues, which include revenues generated on YouTube properties [2].",
+        "verdict": "answered",
+        "cited_sources": [
+          2
+        ],
+        "generation_ms": 2036.5571250440553
+      },
+      "exact": {
+        "retrieval_ms": 1.6404999187216163,
+        "candidate_count": 242,
+        "retrieved": [
+          "GOOGL_2025_10K_0160",
+          "GOOGL_2024_10K_0114",
+          "GOOGL_2025_10K_0106",
+          "GOOGL_2024_10K_0173",
+          "GOOGL_2024_10K_0124",
+          "GOOGL_2024_10K_0115",
+          "GOOGL_2025_10K_0242",
+          "GOOGL_2024_10K_0248",
+          "GOOGL_2025_10K_0014",
+          "GOOGL_2025_10K_0107"
+        ],
+        "selected": [
+          "GOOGL_2025_10K_0160",
+          "GOOGL_2024_10K_0114",
+          "GOOGL_2024_10K_0124",
+          "GOOGL_2024_10K_0115"
+        ],
+        "selected_words": 896,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.5,
+          "first_rank": 2,
+          "useful": [
+            "GOOGL_2024_10K_0114",
+            "GOOGL_2025_10K_0106",
+            "GOOGL_2024_10K_0124",
+            "GOOGL_2024_10K_0115",
+            "GOOGL_2025_10K_0107"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 0.75,
+          "first_rank": 2,
+          "useful": [
+            "GOOGL_2024_10K_0114",
+            "GOOGL_2024_10K_0124",
+            "GOOGL_2024_10K_0115"
+          ]
+        },
+        "answer": "YouTube ads revenues increased $4.6 billion from 2023 to 2024 [2]. YouTube ads revenues increased due to increased spending by advertisers on brand advertising products and direct response advertising products [2].",
+        "verdict": "answered",
+        "cited_sources": [
+          2
+        ],
+        "generation_ms": 2914.45958300028
+      },
+      "retrieved_overlap": 0.1111111111111111,
+      "selected_overlap": 0.14285714285714285,
+      "same_context": false
+    },
+    {
+      "question": "What legal or antitrust matters does Alphabet describe?",
+      "note": "",
+      "evidence_count": 17,
+      "filters": {
+        "ticker": "GOOGL",
+        "fiscal_year": null
+      },
+      "approximate": {
+        "retrieval_ms": 1.5174580039456487,
+        "candidate_count": 340,
+        "retrieved": [
+          "GOOGL_2024_10K_0225",
+          "GOOGL_2025_10K_0214",
+          "GOOGL_2025_10K_0071",
+          "GOOGL_2025_10K_0120",
+          "GOOGL_2025_10K_0150",
+          "GOOGL_2025_10K_0025",
+          "GOOGL_2025_10K_0121",
+          "GOOGL_2025_10K_0132",
+          "GOOGL_2025_10K_0114",
+          "GOOGL_2025_10K_0218"
+        ],
+        "selected": [
+          "GOOGL_2024_10K_0225",
+          "GOOGL_2025_10K_0071",
+          "GOOGL_2025_10K_0120",
+          "GOOGL_2025_10K_0150"
+        ],
+        "selected_words": 954,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.4,
+          "first_rank": 1,
+          "useful": [
+            "GOOGL_2024_10K_0225",
+            "GOOGL_2025_10K_0214",
+            "GOOGL_2025_10K_0071",
+            "GOOGL_2025_10K_0218"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 0.5,
+          "first_rank": 1,
+          "useful": [
+            "GOOGL_2024_10K_0225",
+            "GOOGL_2025_10K_0071"
+          ]
+        },
+        "answer": "Alphabet describes antitrust matters including formal and informal inquiries and investigations by regulatory authorities and private parties in the U.S., Europe, and other jurisdictions globally [1]. Specifically, it mentions a € 2.4 billion fine imposed by the EC for certain actions taken by Google relating to its display and ranking of shopping search results and ads infringing European antitrust laws [1]. Additionally, it is subject to antitrust lawsuits about aspects of its business, including its advertising technologies and practices, the operation and distribution of Google Search, and the operation and distribution of Android operating system and Play Store [2].",
+        "verdict": "answered",
+        "cited_sources": [
+          1,
+          2
+        ],
+        "generation_ms": 5079.831457929686
+      },
+      "exact": {
+        "retrieval_ms": 2.7462909929454327,
+        "candidate_count": 477,
+        "retrieved": [
+          "GOOGL_2024_10K_0225",
+          "GOOGL_2024_10K_0264",
+          "GOOGL_2025_10K_0214",
+          "GOOGL_2024_10K_0063",
+          "GOOGL_2025_10K_0060",
+          "GOOGL_2025_10K_0257",
+          "GOOGL_2025_10K_0059",
+          "GOOGL_2024_10K_0049",
+          "GOOGL_2024_10K_0065",
+          "GOOGL_2025_10K_0042"
+        ],
+        "selected": [
+          "GOOGL_2024_10K_0225",
+          "GOOGL_2024_10K_0264",
+          "GOOGL_2024_10K_0063",
+          "GOOGL_2025_10K_0060"
+        ],
+        "selected_words": 951,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.2,
+          "first_rank": 1,
+          "useful": [
+            "GOOGL_2024_10K_0225",
+            "GOOGL_2025_10K_0214"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 0.25,
+          "first_rank": 1,
+          "useful": [
+            "GOOGL_2024_10K_0225"
+          ]
+        },
+        "answer": "Alphabet describes antitrust matters involving Shopping where in June 2017, the EC announced a € 2.4 billion fine for certain actions taken by Google relating to its display and ranking of shopping search results and ads, infringing European antitrust laws [1].",
+        "verdict": "answered",
+        "cited_sources": [
+          1
+        ],
+        "generation_ms": 3272.3362089600414
+      },
+      "retrieved_overlap": 0.1111111111111111,
+      "selected_overlap": 0.14285714285714285,
+      "same_context": false
+    },
+    {
+      "question": "Which companies depend on TSMC to manufacture their chips?",
+      "note": "no company filter, cross filing",
+      "evidence_count": 13,
+      "filters": {
+        "ticker": null,
+        "fiscal_year": null
+      },
+      "approximate": {
+        "retrieval_ms": 1.7035410273820162,
+        "candidate_count": 399,
+        "retrieved": [
+          "AMD_2025_10K_0073",
+          "AMD_2024_10K_0091",
+          "AMD_2025_10K_0092",
+          "GOOGL_2025_10K_0041",
+          "AMD_2024_10K_0090",
+          "AMD_2025_10K_0051",
+          "AMD_2024_10K_0050",
+          "GOOGL_2024_10K_0048",
+          "GOOGL_2025_10K_0063",
+          "NVDA_2024_10K_0030"
+        ],
+        "selected": [
+          "AMD_2025_10K_0073",
+          "AMD_2024_10K_0091",
+          "AMD_2025_10K_0092",
+          "GOOGL_2025_10K_0041"
+        ],
+        "selected_words": 910,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.1,
+          "first_rank": 1,
+          "useful": [
+            "AMD_2025_10K_0073"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 0.25,
+          "first_rank": 1,
+          "useful": [
+            "AMD_2025_10K_0073"
+          ]
+        },
+        "answer": "TSMC manufactures chips for AMD [1]. TSMC also manufactures chips for other companies, including certain of AMD's competitors [1].",
+        "verdict": "answered",
+        "cited_sources": [
+          1
+        ],
+        "generation_ms": 2160.157874925062
+      },
+      "exact": {
+        "retrieval_ms": 4.206874989904463,
+        "candidate_count": 2418,
+        "retrieved": [
+          "AMD_2025_10K_0073",
+          "NVDA_2025_10K_0072",
+          "AMD_2024_10K_0091",
+          "AMD_2024_10K_0092",
+          "AMD_2025_10K_0093",
+          "AMD_2025_10K_0101",
+          "AMD_2025_10K_0113",
+          "AAPL_2025_10K_0040",
+          "AAPL_2025_10K_0041",
+          "AMD_2024_10K_0074"
+        ],
+        "selected": [
+          "AMD_2025_10K_0073",
+          "NVDA_2025_10K_0072",
+          "AMD_2024_10K_0091",
+          "AMD_2024_10K_0092"
+        ],
+        "selected_words": 980,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.1,
+          "first_rank": 1,
+          "useful": [
+            "AMD_2025_10K_0073"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 0.25,
+          "first_rank": 1,
+          "useful": [
+            "AMD_2025_10K_0073"
+          ]
+        },
+        "answer": "TSMC manufactures chips for AMD [1]. TSMC manufactures chips for NVIDIA [2].",
+        "verdict": "answered",
+        "cited_sources": [
+          1,
+          2
+        ],
+        "generation_ms": 1981.069999979809
+      },
+      "retrieved_overlap": 0.1111111111111111,
+      "selected_overlap": 0.3333333333333333,
+      "same_context": false
+    },
+    {
+      "question": "What is Tesla revenue from electric vehicles?",
+      "note": "out of corpus: no Tesla filing",
+      "evidence_count": null,
+      "filters": {
+        "ticker": null,
+        "fiscal_year": null
+      },
+      "approximate": {
+        "retrieval_ms": 2.3763750214129686,
+        "candidate_count": 536,
+        "retrieved": [
+          "NVDA_2024_10K_0148",
+          "NVDA_2025_10K_0026",
+          "NVDA_2024_10K_0024",
+          "NVDA_2025_10K_0251",
+          "NVDA_2025_10K_0252",
+          "AMD_2025_10K_0188",
+          "AMD_2024_10K_0178",
+          "AMD_2024_10K_0170",
+          "AMD_2025_10K_0178",
+          "AAPL_2025_10K_0052"
+        ],
+        "selected": [
+          "NVDA_2024_10K_0148",
+          "NVDA_2025_10K_0026",
+          "NVDA_2025_10K_0251",
+          "NVDA_2025_10K_0252"
+        ],
+        "selected_words": 924,
+        "retrieved_usefulness": {
+          "hit": null,
+          "precision": null,
+          "first_rank": null,
+          "useful": []
+        },
+        "selected_usefulness": {
+          "hit": null,
+          "precision": null,
+          "first_rank": null,
+          "useful": []
+        },
+        "answer": "The provided filings do not contain this information.",
+        "verdict": "correct refusal",
+        "cited_sources": [],
+        "generation_ms": 1828.904666006565
+      },
+      "exact": {
+        "retrieval_ms": 3.3658749889582396,
+        "candidate_count": 2040,
+        "retrieved": [
+          "NVDA_2025_10K_0164",
+          "MSFT_2025_10K_0105",
+          "MSFT_2025_10K_0112",
+          "NVDA_2024_10K_0191",
+          "MSFT_2025_10K_0148",
+          "MSFT_2024_10K_0131",
+          "MSFT_2024_10K_0171",
+          "MSFT_2025_10K_0149",
+          "MSFT_2025_10K_0150",
+          "NVDA_2024_10K_0193"
+        ],
+        "selected": [
+          "NVDA_2025_10K_0164",
+          "MSFT_2025_10K_0105",
+          "MSFT_2025_10K_0112",
+          "NVDA_2024_10K_0191"
+        ],
+        "selected_words": 965,
+        "retrieved_usefulness": {
+          "hit": null,
+          "precision": null,
+          "first_rank": null,
+          "useful": []
+        },
+        "selected_usefulness": {
+          "hit": null,
+          "precision": null,
+          "first_rank": null,
+          "useful": []
+        },
+        "answer": "The provided filings do not contain this information.",
+        "verdict": "correct refusal",
+        "cited_sources": [],
+        "generation_ms": 1790.9627499757335
+      },
+      "retrieved_overlap": 0.0,
+      "selected_overlap": 0.0,
+      "same_context": false
+    },
+    {
+      "question": "What is the outlook?",
+      "note": "vague question",
+      "evidence_count": null,
+      "filters": {
+        "ticker": null,
+        "fiscal_year": null
+      },
+      "approximate": {
+        "retrieval_ms": 0.05008396692574024,
+        "candidate_count": 11,
+        "retrieved": [
+          "MSFT_2025_10K_0013",
+          "MSFT_2025_10K_0134",
+          "MSFT_2024_10K_0154",
+          "MSFT_2024_10K_0181",
+          "MSFT_2024_10K_0153",
+          "MSFT_2025_10K_0133",
+          "MSFT_2024_10K_0024",
+          "MSFT_2025_10K_0160",
+          "AMD_2024_10K_0140",
+          "MSFT_2025_10K_0014"
+        ],
+        "selected": [
+          "MSFT_2025_10K_0013",
+          "MSFT_2025_10K_0134",
+          "MSFT_2024_10K_0181",
+          "MSFT_2024_10K_0153"
+        ],
+        "selected_words": 892,
+        "retrieved_usefulness": {
+          "hit": null,
+          "precision": null,
+          "first_rank": null,
+          "useful": []
+        },
+        "selected_usefulness": {
+          "hit": null,
+          "precision": null,
+          "first_rank": null,
+          "useful": []
+        },
+        "answer": "The outlook is evaluated through a systematic methodology considering available quantitative and qualitative evidence in evaluating potential impairment of investments [1]. Judgment is applied to assess the pattern of delivery for the SA program, requiring significant judgment due to the benefits and nature of the program [1]. Impairment of investment securities is reviewed quarterly for credit losses and impairment, with a systematic methodology employed to evaluate potential impairment [1]. The judgment involved in assessing the pattern of delivery for the SA program and the evaluation of potential impairment of investments require significant judgment [1].",
+        "verdict": "answered",
+        "cited_sources": [
+          1
+        ],
+        "generation_ms": 4317.09724990651
+      },
+      "exact": {
+        "retrieval_ms": 3.4881250467151403,
+        "candidate_count": 2410,
+        "retrieved": [
+          "AAPL_2025_10K_0105",
+          "AAPL_2025_10K_0106",
+          "AMD_2024_10K_0206",
+          "AMD_2024_10K_0194",
+          "AMD_2025_10K_0204",
+          "AAPL_2024_10K_0102",
+          "AAPL_2024_10K_0101",
+          "AMD_2025_10K_0248",
+          "AMD_2025_10K_0259",
+          "GOOGL_2024_10K_0190"
+        ],
+        "selected": [
+          "AAPL_2025_10K_0105",
+          "AAPL_2025_10K_0106",
+          "AMD_2024_10K_0206",
+          "AMD_2024_10K_0194"
+        ],
+        "selected_words": 944,
+        "retrieved_usefulness": {
+          "hit": null,
+          "precision": null,
+          "first_rank": null,
+          "useful": []
+        },
+        "selected_usefulness": {
+          "hit": null,
+          "precision": null,
+          "first_rank": null,
+          "useful": []
+        },
+        "answer": "The provided filings do not contain this information.",
+        "verdict": "refused",
+        "cited_sources": [],
+        "generation_ms": 1587.8816669574007
+      },
+      "retrieved_overlap": 0.0,
+      "selected_overlap": 0.0,
+      "same_context": false
+    },
+    {
+      "question": "How did share repurchases change in fiscal 2025?",
+      "note": "fiscal year filter but no company",
+      "evidence_count": 70,
+      "filters": {
+        "ticker": null,
+        "fiscal_year": 2025
+      },
+      "approximate": {
+        "retrieval_ms": 3.105207928456366,
+        "candidate_count": 721,
+        "retrieved": [
+          "MSFT_2025_10K_0103",
+          "MSFT_2025_10K_0102",
+          "MSFT_2025_10K_0129",
+          "NVDA_2025_10K_0170",
+          "NVDA_2025_10K_0231",
+          "NVDA_2025_10K_0232",
+          "NVDA_2025_10K_0142",
+          "NVDA_2025_10K_0169",
+          "NVDA_2025_10K_0141",
+          "NVDA_2025_10K_0171"
+        ],
+        "selected": [
+          "MSFT_2025_10K_0103",
+          "MSFT_2025_10K_0102",
+          "MSFT_2025_10K_0129",
+          "NVDA_2025_10K_0170"
+        ],
+        "selected_words": 886,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 1.0,
+          "first_rank": 1,
+          "useful": [
+            "MSFT_2025_10K_0103",
+            "MSFT_2025_10K_0102",
+            "MSFT_2025_10K_0129",
+            "NVDA_2025_10K_0170",
+            "NVDA_2025_10K_0231",
+            "NVDA_2025_10K_0232",
+            "NVDA_2025_10K_0142",
+            "NVDA_2025_10K_0169",
+            "NVDA_2025_10K_0141",
+            "NVDA_2025_10K_0171"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 1.0,
+          "first_rank": 1,
+          "useful": [
+            "MSFT_2025_10K_0103",
+            "MSFT_2025_10K_0102",
+            "MSFT_2025_10K_0129",
+            "NVDA_2025_10K_0170"
+          ]
+        },
+        "answer": "Microsoft Corporation's share repurchases increased from $12.0 billion in fiscal year 2024 to $13.0 billion in fiscal year 2025 [2].",
+        "verdict": "answered",
+        "cited_sources": [
+          2
+        ],
+        "generation_ms": 2836.9930000044405
+      },
+      "exact": {
+        "retrieval_ms": 3.5115000791847706,
+        "candidate_count": 1186,
+        "retrieved": [
+          "MSFT_2025_10K_0102",
+          "MSFT_2025_10K_0197",
+          "MSFT_2025_10K_0198",
+          "GOOGL_2025_10K_0225",
+          "MSFT_2025_10K_0101",
+          "NVDA_2025_10K_0171",
+          "AMD_2025_10K_0178",
+          "GOOGL_2025_10K_0117",
+          "MSFT_2025_10K_0188",
+          "NVDA_2025_10K_0141"
+        ],
+        "selected": [
+          "MSFT_2025_10K_0102",
+          "MSFT_2025_10K_0197",
+          "MSFT_2025_10K_0198",
+          "GOOGL_2025_10K_0225"
+        ],
+        "selected_words": 942,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.7,
+          "first_rank": 1,
+          "useful": [
+            "MSFT_2025_10K_0102",
+            "MSFT_2025_10K_0197",
+            "MSFT_2025_10K_0198",
+            "GOOGL_2025_10K_0225",
+            "MSFT_2025_10K_0101",
+            "NVDA_2025_10K_0171",
+            "NVDA_2025_10K_0141"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 1.0,
+          "first_rank": 1,
+          "useful": [
+            "MSFT_2025_10K_0102",
+            "MSFT_2025_10K_0197",
+            "MSFT_2025_10K_0198",
+            "GOOGL_2025_10K_0225"
+          ]
+        },
+        "answer": "Share repurchases increased significantly in fiscal 2025 compared to previous years [1]. In 2025, Microsoft repurchased 13,000 million shares worth $9.4 billion in total, while in 2024 they repurchased 11,960 million shares worth $8.5 billion [2]. In 2023, they repurchased 18,400 million shares worth $15.2 billion [3]. This indicates a substantial increase in share repurchases in fiscal 2025.",
+        "verdict": "answered",
+        "cited_sources": [
+          1,
+          2,
+          3
+        ],
+        "generation_ms": 5772.322958917357
+      },
+      "retrieved_overlap": 0.17647058823529413,
+      "selected_overlap": 0.14285714285714285,
+      "same_context": false
+    },
+    {
+      "question": "aple iphone net sales",
+      "note": "typo in the company name",
+      "evidence_count": 2,
+      "filters": {
+        "ticker": null,
+        "fiscal_year": null
+      },
+      "approximate": {
+        "retrieval_ms": 3.453416982665658,
+        "candidate_count": 905,
+        "retrieved": [
+          "AAPL_2025_10K_0084",
+          "AAPL_2024_10K_0082",
+          "AAPL_2024_10K_0081",
+          "AAPL_2025_10K_0083",
+          "AAPL_2024_10K_0103",
+          "AAPL_2024_10K_0080",
+          "AAPL_2024_10K_0104",
+          "AAPL_2025_10K_0108",
+          "AAPL_2025_10K_0107",
+          "AAPL_2024_10K_0129"
+        ],
+        "selected": [
+          "AAPL_2025_10K_0084",
+          "AAPL_2024_10K_0082",
+          "AAPL_2024_10K_0081",
+          "AAPL_2025_10K_0083"
+        ],
+        "selected_words": 963,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.2,
+          "first_rank": 1,
+          "useful": [
+            "AAPL_2025_10K_0084",
+            "AAPL_2024_10K_0082"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 0.5,
+          "first_rank": 1,
+          "useful": [
+            "AAPL_2025_10K_0084",
+            "AAPL_2024_10K_0082"
+          ]
+        },
+        "answer": "Apple iPhone net sales increased during 2025 compared to 2024 primarily due to higher net sales of Pro models [1].",
+        "verdict": "answered",
+        "cited_sources": [
+          1
+        ],
+        "generation_ms": 3469.583334052004
+      },
+      "exact": {
+        "retrieval_ms": 1.2528329389169812,
+        "candidate_count": 805,
+        "retrieved": [
+          "AAPL_2024_10K_0081",
+          "AAPL_2025_10K_0083",
+          "AAPL_2025_10K_0084",
+          "AAPL_2024_10K_0082",
+          "AAPL_2025_10K_0107",
+          "AAPL_2024_10K_0080",
+          "AAPL_2024_10K_0128",
+          "NVDA_2024_10K_0184",
+          "NVDA_2025_10K_0191",
+          "MSFT_2024_10K_0191"
+        ],
+        "selected": [
+          "AAPL_2024_10K_0081",
+          "AAPL_2025_10K_0083",
+          "AAPL_2025_10K_0084",
+          "AAPL_2024_10K_0082"
+        ],
+        "selected_words": 963,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.2,
+          "first_rank": 3,
+          "useful": [
+            "AAPL_2025_10K_0084",
+            "AAPL_2024_10K_0082"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 0.5,
+          "first_rank": 3,
+          "useful": [
+            "AAPL_2025_10K_0084",
+            "AAPL_2024_10K_0082"
+          ]
+        },
+        "answer": "Apple iPhone net sales increased during 2025 compared to 2024 due to higher net sales of Pro models [3].",
+        "verdict": "answered",
+        "cited_sources": [
+          3
+        ],
+        "generation_ms": 3463.262917008251
+      },
+      "retrieved_overlap": 0.42857142857142855,
+      "selected_overlap": 1.0,
+      "same_context": false
+    },
+    {
+      "question": "nvidia reserch and developmnet expenses",
+      "note": "two typos in the topic words",
+      "evidence_count": 6,
+      "filters": {
+        "ticker": "NVDA",
+        "fiscal_year": null
+      },
+      "approximate": {
+        "retrieval_ms": 2.7264580130577087,
+        "candidate_count": 320,
+        "retrieved": [
+          "NVDA_2024_10K_0184",
+          "NVDA_2024_10K_0183",
+          "NVDA_2024_10K_0052",
+          "NVDA_2024_10K_0051",
+          "NVDA_2025_10K_0190",
+          "NVDA_2025_10K_0055",
+          "NVDA_2025_10K_0166",
+          "NVDA_2024_10K_0159",
+          "NVDA_2025_10K_0165",
+          "NVDA_2024_10K_0229"
+        ],
+        "selected": [
+          "NVDA_2024_10K_0184",
+          "NVDA_2024_10K_0183",
+          "NVDA_2024_10K_0052",
+          "NVDA_2024_10K_0051"
+        ],
+        "selected_words": 973,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.5,
+          "first_rank": 1,
+          "useful": [
+            "NVDA_2024_10K_0184",
+            "NVDA_2024_10K_0183",
+            "NVDA_2025_10K_0190",
+            "NVDA_2025_10K_0166",
+            "NVDA_2025_10K_0165"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 0.5,
+          "first_rank": 1,
+          "useful": [
+            "NVDA_2024_10K_0184",
+            "NVDA_2024_10K_0183"
+          ]
+        },
+        "answer": "[1] NVIDIA Corporation's research and development expenses for the fiscal year ending January 28, 2024 were $8,675 million. For the fiscal year ending January 29, 2023, it was $7,339 million. For the fiscal year ending January 30, 2022, it was $5,268 million.",
+        "verdict": "correct",
+        "cited_sources": [
+          1
+        ],
+        "generation_ms": 4553.924666950479
+      },
+      "exact": {
+        "retrieval_ms": 3.3118330175057054,
+        "candidate_count": 521,
+        "retrieved": [
+          "NVDA_2025_10K_0005",
+          "NVDA_2024_10K_0005",
+          "NVDA_2025_10K_0055",
+          "NVDA_2025_10K_0264",
+          "NVDA_2024_10K_0019",
+          "NVDA_2024_10K_0052",
+          "NVDA_2024_10K_0190",
+          "NVDA_2024_10K_0227",
+          "NVDA_2024_10K_0256",
+          "NVDA_2025_10K_0039"
+        ],
+        "selected": [
+          "NVDA_2025_10K_0005",
+          "NVDA_2025_10K_0055",
+          "NVDA_2025_10K_0264",
+          "NVDA_2024_10K_0019"
+        ],
+        "selected_words": 991,
+        "retrieved_usefulness": {
+          "hit": false,
+          "precision": 0.0,
+          "first_rank": null,
+          "useful": []
+        },
+        "selected_usefulness": {
+          "hit": false,
+          "precision": 0.0,
+          "first_rank": null,
+          "useful": []
+        },
+        "answer": "[1] NVIDIA Corporation discloses market risk disclosures in its 10-K filing for fiscal year 2025. [1] Research and development expenses are not directly disclosed in the given 10-K filing for fiscal year 2025.",
+        "verdict": "missed fact",
+        "cited_sources": [
+          1
+        ],
+        "generation_ms": 3133.435499970801
+      },
+      "retrieved_overlap": 0.1111111111111111,
+      "selected_overlap": 0.0,
+      "same_context": false
+    },
+    {
+      "question": "alphabet youtube advertisng revenue",
+      "note": "typo in a topic word",
+      "evidence_count": 9,
+      "filters": {
+        "ticker": "GOOGL",
+        "fiscal_year": null
+      },
+      "approximate": {
+        "retrieval_ms": 2.1570000099018216,
+        "candidate_count": 346,
+        "retrieved": [
+          "GOOGL_2025_10K_0107",
+          "GOOGL_2025_10K_0125",
+          "GOOGL_2025_10K_0110",
+          "GOOGL_2025_10K_0117",
+          "GOOGL_2024_10K_0114",
+          "GOOGL_2025_10K_0106",
+          "GOOGL_2025_10K_0161",
+          "GOOGL_2024_10K_0124",
+          "GOOGL_2024_10K_0116",
+          "GOOGL_2025_10K_0242"
+        ],
+        "selected": [
+          "GOOGL_2025_10K_0107",
+          "GOOGL_2025_10K_0125",
+          "GOOGL_2025_10K_0110",
+          "GOOGL_2025_10K_0117"
+        ],
+        "selected_words": 931,
+        "retrieved_usefulness": {
+          "hit": true,
+          "precision": 0.5,
+          "first_rank": 1,
+          "useful": [
+            "GOOGL_2025_10K_0107",
+            "GOOGL_2025_10K_0117",
+            "GOOGL_2024_10K_0114",
+            "GOOGL_2025_10K_0106",
+            "GOOGL_2024_10K_0124"
+          ]
+        },
+        "selected_usefulness": {
+          "hit": true,
+          "precision": 0.5,
+          "first_rank": 1,
+          "useful": [
+            "GOOGL_2025_10K_0107",
+            "GOOGL_2025_10K_0117"
+          ]
+        },
+        "answer": "YouTube ads revenues increased $4.2 billion from 2024 to 2025 [4].",
+        "verdict": "answered",
+        "cited_sources": [
+          4
+        ],
+        "generation_ms": 2202.3420829791576
+      },
+      "exact": {
+        "retrieval_ms": 1.1949170148000121,
+        "candidate_count": 322,
+        "retrieved": [
+          "GOOGL_2024_10K_0264",
+          "GOOGL_2025_10K_0257",
+          "GOOGL_2025_10K_0258",
+          "GOOGL_2024_10K_0196",
+          "GOOGL_2025_10K_0183",
+          "GOOGL_2024_10K_0265",
+          "GOOGL_2024_10K_0105",
+          "GOOGL_2024_10K_0171",
+          "GOOGL_2024_10K_0263",
+          "GOOGL_2025_10K_0098"
+        ],
+        "selected": [
+          "GOOGL_2024_10K_0264",
+          "GOOGL_2025_10K_0258",
+          "GOOGL_2024_10K_0196",
+          "GOOGL_2024_10K_0105"
+        ],
+        "selected_words": 967,
+        "retrieved_usefulness": {
+          "hit": false,
+          "precision": 0.0,
+          "first_rank": null,
+          "useful": []
+        },
+        "selected_usefulness": {
+          "hit": false,
+          "precision": 0.0,
+          "first_rank": null,
+          "useful": []
+        },
+        "answer": "The provided filings do not contain this information.",
+        "verdict": "refused",
+        "cited_sources": [],
+        "generation_ms": 2831.4148749923334
+      },
+      "retrieved_overlap": 0.0,
+      "selected_overlap": 0.0,
+      "same_context": false
+    }
+  ]
+}
