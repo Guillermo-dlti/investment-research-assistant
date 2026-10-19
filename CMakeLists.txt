@@ -51,6 +51,10 @@ add_library(approximate_rerank_core src/cpp/approximate_rerank.cpp)
 target_include_directories(approximate_rerank_core PUBLIC src/cpp)
 target_link_libraries(approximate_rerank_core PUBLIC inverted_index_core ngram_jaccard_core)
 
+add_library(context_selection_core src/cpp/context_selection.cpp)
+target_include_directories(context_selection_core PUBLIC src/cpp)
+target_link_libraries(context_selection_core PUBLIC ngram_jaccard_core)
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
     target_compile_options(json_support PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(trie_core PRIVATE -Wall -Wextra -Wpedantic)
@@ -60,6 +64,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|Clang|GNU")
     target_compile_options(levenshtein_core PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(ngram_jaccard_core PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(approximate_rerank_core PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(context_selection_core PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
 add_executable(trie_demo src/cpp/trie_demo.cpp)
@@ -83,6 +88,9 @@ target_link_libraries(ngram_jaccard_demo PRIVATE ngram_jaccard_core inverted_ind
 add_executable(approximate_rerank_demo src/cpp/approximate_rerank_demo.cpp)
 target_link_libraries(approximate_rerank_demo PRIVATE approximate_rerank_core)
 
+add_executable(context_selection_demo src/cpp/context_selection_demo.cpp)
+target_link_libraries(context_selection_demo PRIVATE context_selection_core)
+
 add_executable(exact_matching_benchmark src/cpp/exact_matching_benchmark.cpp)
 target_link_libraries(
     exact_matching_benchmark
@@ -103,7 +111,7 @@ pybind11_add_module(investment_engine MODULE src/cpp/python_bindings.cpp)
 target_link_libraries(
     investment_engine
     PRIVATE trie_core inverted_index_core kmp_core z_function_core levenshtein_core
-        ngram_jaccard_core approximate_rerank_core
+        ngram_jaccard_core approximate_rerank_core context_selection_core
 )
 set_target_properties(
     investment_engine
@@ -133,6 +141,9 @@ target_link_libraries(ngram_jaccard_tests PRIVATE ngram_jaccard_core)
 
 add_executable(approximate_rerank_tests src/cpp/tests/approximate_rerank_tests.cpp)
 target_link_libraries(approximate_rerank_tests PRIVATE approximate_rerank_core)
+
+add_executable(context_selection_tests src/cpp/tests/context_selection_tests.cpp)
+target_link_libraries(context_selection_tests PRIVATE context_selection_core)
 
 set(SYNTHETIC_TRIE_TESTS
     insert_and_search
@@ -226,7 +237,7 @@ set(NGRAM_JACCARD_TESTS
     character_grams character_short_and_empty character_utf8_bytes word_grams
     word_range_validation jaccard_values jaccard_symmetry index_ranking
     index_tie_break index_limits index_validation index_score_chunks
-    index_score_chunks_unknown
+    index_score_chunks_unknown index_chunk_similarity
 )
 foreach(TEST_NAME IN LISTS NGRAM_JACCARD_TESTS)
     add_test(NAME "ngram_jaccard_${TEST_NAME}" COMMAND ngram_jaccard_tests "${TEST_NAME}")
@@ -239,6 +250,15 @@ set(APPROXIMATE_RERANK_TESTS
 foreach(TEST_NAME IN LISTS APPROXIMATE_RERANK_TESTS)
     add_test(NAME "approximate_rerank_${TEST_NAME}" COMMAND approximate_rerank_tests "${TEST_NAME}")
     set_tests_properties("approximate_rerank_${TEST_NAME}" PROPERTIES LABELS "portable;approximate_rerank")
+endforeach()
+
+set(CONTEXT_SELECTION_TESTS
+    selects_top_in_order drops_redundant skips_over_budget respects_limit tie_break
+    threshold_one empty_candidates validation
+)
+foreach(TEST_NAME IN LISTS CONTEXT_SELECTION_TESTS)
+    add_test(NAME "context_selection_${TEST_NAME}" COMMAND context_selection_tests "${TEST_NAME}")
+    set_tests_properties("context_selection_${TEST_NAME}" PROPERTIES LABELS "portable;context_selection")
 endforeach()
 
 set(SYNTHETIC_INVERTED_INDEX_TESTS

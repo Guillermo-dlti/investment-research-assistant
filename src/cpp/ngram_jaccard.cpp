@@ -160,6 +160,25 @@ std::vector<JaccardResult> JaccardIndex::scoreChunks(
     return results;
 }
 
+double JaccardIndex::chunkSimilarity(
+    const std::string& first_id,
+    const std::string& second_id
+) const {
+    const auto first = positions_.find(first_id);
+    if (first == positions_.end()) {
+        throw std::invalid_argument("unknown chunk ID: " + first_id);
+    }
+    const auto second = positions_.find(second_id);
+    if (second == positions_.end()) {
+        throw std::invalid_argument("unknown chunk ID: " + second_id);
+    }
+    return jaccardSimilarity(chunks_[first->second].second, chunks_[second->second].second);
+}
+
+bool JaccardIndex::hasChunk(const std::string& chunk_id) const {
+    return positions_.find(chunk_id) != positions_.end();
+}
+
 std::size_t JaccardIndex::chunkCount() const {
     return chunks_.size();
 }

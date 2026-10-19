@@ -123,6 +123,19 @@ void indexScoreChunksUnknown() {
     expect(throwsInvalidArgument([&index] { (void)index.scoreChunks({"C9"}, {"a"}); }), "unknown ID rejected");
 }
 
+void indexChunkSimilarity() {
+    JaccardIndex index = sampleIndex();
+    index.addChunk("C4", {"nvidia", "revenue", "grew"});
+    // C1 = {nvidia, revenue, grew, nvidia revenue, revenue grew};
+    // C2 = {amd, revenue, amd revenue}; they share only "revenue": 1 / 7.
+    expect(std::fabs(index.chunkSimilarity("C1", "C2") - 1.0 / 7.0) < 1e-12, "partial overlap");
+    expect(index.chunkSimilarity("C1", "C4") == 1.0, "identical text");
+    expect(index.chunkSimilarity("C1", "C3") == 0.0, "disjoint");
+    expect(index.chunkSimilarity("C2", "C1") == index.chunkSimilarity("C1", "C2"), "symmetric");
+    expect(index.hasChunk("C1") && !index.hasChunk("C9"), "has chunk");
+    expect(throwsInvalidArgument([&index] { (void)index.chunkSimilarity("C1", "C9"); }), "unknown ID rejected");
+}
+
 }  // namespace
 
 int main(int argc, char* argv[]) {
@@ -134,6 +147,7 @@ int main(int argc, char* argv[]) {
         {"index_tie_break", indexTieBreak}, {"index_limits", indexLimits},
         {"index_validation", indexValidation}, {"index_score_chunks", indexScoreChunks},
         {"index_score_chunks_unknown", indexScoreChunksUnknown},
+        {"index_chunk_similarity", indexChunkSimilarity},
     };
     if (argc != 2 || tests.find(argv[1]) == tests.end()) {
         std::cerr << "Usage: ngram_jaccard_tests TEST_NAME\n";
