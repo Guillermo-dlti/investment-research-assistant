@@ -11,9 +11,16 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+try:
+    from .document_manifest import DEFAULT_MANIFEST, load_manifest, select_documents
+except ImportError:
+    from document_manifest import DEFAULT_MANIFEST, load_manifest, select_documents
+
 
 DEFAULT_INPUT = Path("data/processed/nvidia_2025.json")
 DEFAULT_OUTPUT = Path("data/chunks/nvidia_2025_chunks.json")
+DEFAULT_PROCESSED_DIR = Path("data/processed")
+DEFAULT_CHUNKS_DIR = Path("data/chunks")
 DEFAULT_CHUNK_SIZE = 250
 DEFAULT_OVERLAP = 40
 # Count whitespace-delimited tokens that contain at least one letter or number.
@@ -240,6 +247,12 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Split an extracted financial document into overlapping chunks."
     )
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument("--document-id", help="chunk one manifest document")
+    selection.add_argument("--all", action="store_true", help="chunk all documents")
+    parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
+    parser.add_argument("--processed-dir", type=Path, default=DEFAULT_PROCESSED_DIR)
+    parser.add_argument("--chunks-dir", type=Path, default=DEFAULT_CHUNKS_DIR)
     parser.add_argument("--input", type=Path, default=DEFAULT_INPUT)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--chunk-size", type=int, default=DEFAULT_CHUNK_SIZE)
@@ -251,20 +264,51 @@ def main() -> int:
     args = parse_args()
     try:
         validate_parameters(args.chunk_size, args.overlap)
-        source_document = load_document(args.input)
-        result = chunk_document(source_document, args.chunk_size, args.overlap)
-        write_chunks(result, args.output)
     except ValueError as exc:
         print(f"Chunking failed: {exc}", file=sys.stderr)
-        return 1
-    except OSError as exc:
-        print(f"Chunking failed while writing {args.output}: {exc}", file=sys.stderr)
-        return 1
+        return 2
 
-    sizes = [chunk["word_count"] for chunk in result["chunks"]]
-    print(f"Created {result['total_chunks']:,} chunks: {args.output}")
-    print(f"Chunk words: min={min(sizes)}, max={max(sizes)}, average={sum(sizes) / len(sizes):.2f}")
-    return 0
+    jobs: list[tuple[str, Path, Path]]
+    if args.all or args.document_id:
+        try:
+            records = select_documents(
+                load_manifest(args.manifest), args.document_id, args.all
+            )
+        except ValueError as exc:
+            print(f"Chunking failed: {exc}", file=sys.stderr)
+            return 2
+        jobs = [
+            (
+                record.document_id,
+                args.processed_dir / f"{record.file_stem}.json",
+                args.chunks_dir / f"{record.file_stem}_chunks.json",
+            )
+            for record in records
+        ]
+    else:
+        jobs = [("input document", args.input, args.output)]
+
+    successes = 0
+    for label, input_path, output_path in jobs:
+        try:
+            source_document = load_document(input_path)
+            result = chunk_document(source_document, args.chunk_size, args.overlap)
+            write_chunks(result, output_path)
+        except ValueError as exc:
+            print(f"[FAILED] {label}: {exc}", file=sys.stderr)
+            continue
+        except OSError as exc:
+            print(f"[FAILED] {label}: could not write {output_path}: {exc}", file=sys.stderr)
+            continue
+        sizes = [chunk["word_count"] for chunk in result["chunks"]]
+        print(
+            f"[OK] {result['document_id']}: {result['total_chunks']:,} chunks "
+            f"(min={min(sizes)}, max={max(sizes)}, "
+            f"average={sum(sizes) / len(sizes):.2f})"
+        )
+        successes += 1
+    print(f"Chunking summary: {successes}/{len(jobs)} successful")
+    return 0 if successes == len(jobs) else 1
 
 
 if __name__ == "__main__":

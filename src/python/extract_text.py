@@ -1,4 +1,4 @@
-"""Extract readable text and metadata from the NVIDIA FY2025 Form 10-K."""
+"""Extract readable text and metadata from SEC HTML financial filings."""
 
 from __future__ import annotations
 
@@ -7,17 +7,30 @@ import json
 import re
 import sys
 from pathlib import Path
+from typing import Any
 
 from bs4 import BeautifulSoup, Tag
 
+try:
+    from .document_manifest import (
+        DEFAULT_MANIFEST,
+        DocumentRecord,
+        load_manifest,
+        select_documents,
+    )
+except ImportError:
+    from document_manifest import (
+        DEFAULT_MANIFEST,
+        DocumentRecord,
+        load_manifest,
+        select_documents,
+    )
 
-DEFAULT_INPUT = Path("data/raw/nvidia_2025.html")
-DEFAULT_TEXT_OUTPUT = Path("data/processed/nvidia_2025.txt")
-DEFAULT_JSON_OUTPUT = Path("data/processed/nvidia_2025.json")
-SOURCE_URL = (
-    "https://www.sec.gov/Archives/edgar/data/1045810/"
-    "000104581025000023/nvda-20250126.htm"
-)
+
+DEFAULT_RAW_DIR = Path("data/raw")
+DEFAULT_PROCESSED_DIR = Path("data/processed")
+MINIMUM_EXTRACTED_WORDS = 5_000
+MINIMUM_EXTRACTED_PARAGRAPHS = 100
 PRIMARY_BLOCK_TAGS = {
     "address",
     "blockquote",
@@ -44,6 +57,19 @@ REMOVABLE_TAGS = {
     "ix:references",
     "ix:resources",
 }
+LEGACY_METADATA: dict[str, Any] = {
+    "document_id": "NVDA_2025_10K",
+    "company": "NVIDIA Corporation",
+    "ticker": "NVDA",
+    "fiscal_year": 2025,
+    "document_type": "10-K",
+    "filing_date": "2025-02-26",
+    "fiscal_year_end": "2025-01-26",
+    "source_url": (
+        "https://www.sec.gov/Archives/edgar/data/1045810/"
+        "000104581025000023/nvda-20250126.htm"
+    ),
+}
 
 
 def read_html(path: Path) -> bytes:
@@ -51,9 +77,9 @@ def read_html(path: Path) -> bytes:
     try:
         content = path.read_bytes()
     except OSError as exc:
-        raise ValueError(f"Could not read {path}: {exc}") from exc
+        raise ValueError(f"could not read {path}: {exc}") from exc
     if not content.strip():
-        raise ValueError(f"Input file is empty: {path}")
+        raise ValueError(f"input file is empty: {path}")
     return content
 
 
@@ -97,7 +123,8 @@ def extract_paragraphs(content: bytes | str) -> list[str]:
     for tag in list(soup.find_all(REMOVABLE_TAGS)):
         tag.decompose()
     for tag in list(soup.find_all(_is_hidden)):
-        tag.decompose()
+        if tag.parent is not None:
+            tag.decompose()
 
     paragraphs: list[str] = []
     for tag in soup.find_all([*PRIMARY_BLOCK_TAGS, "div"]):
@@ -132,18 +159,14 @@ def count_words(text: str) -> int:
     return len(re.findall(r"\b[\w]+(?:[’'-][\w]+)*\b", text, flags=re.UNICODE))
 
 
-def build_document(paragraphs: list[str]) -> dict[str, object]:
-    """Build the required structured representation and actual text statistics."""
+def build_document(
+    paragraphs: list[str], metadata: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Build a structured document while preserving manifest metadata."""
     text = "\n\n".join(paragraphs)
+    document_metadata = dict(metadata or LEGACY_METADATA)
     return {
-        "document_id": "NVDA_2025_10K",
-        "company": "NVIDIA Corporation",
-        "ticker": "NVDA",
-        "fiscal_year": 2025,
-        "document_type": "10-K",
-        "filing_date": "2025-02-26",
-        "fiscal_year_end": "2025-01-26",
-        "source_url": SOURCE_URL,
+        **document_metadata,
         "word_count": count_words(text),
         "character_count": len(text),
         "paragraphs": [
@@ -154,14 +177,29 @@ def build_document(paragraphs: list[str]) -> dict[str, object]:
 
 
 def process_filing(
-    input_path: Path, text_output: Path, json_output: Path
-) -> dict[str, object]:
+    input_path: Path,
+    text_output: Path,
+    json_output: Path,
+    metadata: dict[str, Any] | None = None,
+    require_substantial_filing: bool = True,
+) -> dict[str, Any]:
     """Extract a filing and write UTF-8 text and JSON outputs."""
     paragraphs = extract_paragraphs(read_html(input_path))
     if not paragraphs:
-        raise ValueError("No readable text was extracted from the filing.")
+        raise ValueError("no readable text was extracted from the filing")
+    document = build_document(paragraphs, metadata)
+    if require_substantial_filing:
+        if document["word_count"] < MINIMUM_EXTRACTED_WORDS:
+            raise ValueError(
+                f"extraction produced only {document['word_count']:,} words; "
+                "refusing to silently accept an incomplete Form 10-K"
+            )
+        if len(paragraphs) < MINIMUM_EXTRACTED_PARAGRAPHS:
+            raise ValueError(
+                f"extraction produced only {len(paragraphs):,} paragraphs; "
+                "refusing to silently accept an incomplete Form 10-K"
+            )
 
-    document = build_document(paragraphs)
     text = "\n\n".join(paragraphs)
     text_output.parent.mkdir(parents=True, exist_ok=True)
     json_output.parent.mkdir(parents=True, exist_ok=True)
@@ -172,33 +210,77 @@ def process_filing(
     return document
 
 
+def _existing_outputs_are_current(
+    record: DocumentRecord, text_path: Path, json_path: Path
+) -> bool:
+    if not text_path.exists() or not json_path.exists():
+        return False
+    try:
+        existing = json.loads(json_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    metadata = record.metadata()
+    return (
+        isinstance(existing, dict)
+        and all(existing.get(key) == value for key, value in metadata.items())
+        and isinstance(existing.get("paragraphs"), list)
+        and existing.get("word_count", 0) >= MINIMUM_EXTRACTED_WORDS
+        and len(existing["paragraphs"]) >= MINIMUM_EXTRACTED_PARAGRAPHS
+    )
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Extract readable text from NVIDIA's FY2025 Form 10-K HTML."
+        description="Extract readable text from SEC Form 10-K HTML filings."
     )
-    parser.add_argument("--input", type=Path, default=DEFAULT_INPUT)
-    parser.add_argument("--text-output", type=Path, default=DEFAULT_TEXT_OUTPUT)
-    parser.add_argument("--json-output", type=Path, default=DEFAULT_JSON_OUTPUT)
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument("--document-id", help="extract one manifest document")
+    selection.add_argument("--all", action="store_true", help="extract all documents")
+    parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
+    parser.add_argument("--raw-dir", type=Path, default=DEFAULT_RAW_DIR)
+    parser.add_argument("--processed-dir", type=Path, default=DEFAULT_PROCESSED_DIR)
+    parser.add_argument("--force", action="store_true")
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
     try:
-        document = process_filing(args.input, args.text_output, args.json_output)
+        records = select_documents(
+            load_manifest(args.manifest), args.document_id, args.all
+        )
     except ValueError as exc:
         print(f"Extraction failed: {exc}", file=sys.stderr)
-        return 1
+        return 2
 
-    paragraphs = document["paragraphs"]
-    sample = paragraphs[0]["text"][:300] if paragraphs else ""
-    print(f"Extracted text: {args.text_output}")
-    print(f"Structured metadata: {args.json_output}")
-    print(f"Words: {document['word_count']:,}")
-    print(f"Characters: {document['character_count']:,}")
-    print(f"Paragraphs: {len(paragraphs):,}")
-    print(f"Sample: {sample}")
-    return 0
+    successes = 0
+    for record in records:
+        input_path = args.raw_dir / f"{record.file_stem}.html"
+        text_path = args.processed_dir / f"{record.file_stem}.txt"
+        json_path = args.processed_dir / f"{record.file_stem}.json"
+        if not args.force and _existing_outputs_are_current(record, text_path, json_path):
+            existing = json.loads(json_path.read_text(encoding="utf-8"))
+            print(
+                f"[OK] {record.document_id}: existing output "
+                f"({existing['word_count']:,} words, {len(existing['paragraphs']):,} paragraphs)"
+            )
+            successes += 1
+            continue
+        try:
+            document = process_filing(
+                input_path, text_path, json_path, record.metadata()
+            )
+        except ValueError as exc:
+            print(f"[FAILED] {record.document_id}: {exc}", file=sys.stderr)
+            continue
+        print(
+            f"[OK] {record.document_id}: {document['word_count']:,} words, "
+            f"{len(document['paragraphs']):,} paragraphs"
+        )
+        successes += 1
+
+    print(f"Extraction summary: {successes}/{len(records)} successful")
+    return 0 if successes == len(records) else 1
 
 
 if __name__ == "__main__":

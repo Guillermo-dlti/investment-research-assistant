@@ -79,31 +79,46 @@ deactivate
 
 ## Document Preparation
 
-Original SEC filings are stored in `data/raw/`, while readable text and structured JSON results are stored in `data/processed/`. Keeping the source HTML separate preserves an auditable copy of the official filing and allows extraction to be repeated without downloading it again.
+The tracked manifest at `config/document_manifest.json` records the verified FY2024 and FY2025 SEC Form 10-K filings for NVIDIA, AMD, Microsoft, Apple, and Alphabet. Original SEC filings are stored in `data/raw/`, while readable text and structured JSON results are stored in `data/processed/`. Keeping source HTML separate preserves an auditable copy of each official filing and allows extraction to be repeated without downloading it again.
 
-Activate the virtual environment and provide a real contact email for the SEC request header:
+Activate the virtual environment and provide your real contact email for the SEC request header:
 
 ```bash
 source .venv/bin/activate
-export SEC_CONTACT_EMAIL="your_real_contact_email"
-python src/python/download_documents.py
+export SEC_CONTACT_EMAIL="your_actual_email@university.edu"
 ```
 
-The downloader retrieves only NVIDIA's official FY2025 Form 10-K and saves it as `data/raw/nvidia_2025.html`. It does not overwrite a valid existing copy. Use `--force` only when an existing file intentionally needs to be replaced.
-
-After the HTML file is present, extract its readable content and metadata:
+Download the complete ten-document collection:
 
 ```bash
-python src/python/extract_text.py
+python src/python/download_documents.py --all
 ```
 
-The extractor writes `data/processed/nvidia_2025.txt` and `data/processed/nvidia_2025.json`.
+Download one filing by its manifest ID when needed:
+
+```bash
+python src/python/download_documents.py --document-id NVDA_2025_10K
+```
+
+The downloader reuses valid existing files, waits between SEC requests, and does not overwrite files unless `--force` is supplied. Extract all available filings:
+
+```bash
+python src/python/extract_text.py --all
+```
+
+Each filing produces a readable `.txt` file and a structured `.json` file under `data/processed/`. Raw filings and generated outputs are ignored by Git; the manifest remains tracked so another student can reproduce the collection from the official sources.
 
 ## Document Chunking
 
 Large financial filings are split into smaller passages so later retrieval stages can work with focused, readable context. The initial strategy targets 250 words per chunk, preserves paragraph or sentence boundaries when practical, and repeats the preceding 40 words to maintain context between consecutive chunks.
 
-Run the chunker from the project root:
+Generate 250-word chunks with 40 words of overlap for the full collection:
+
+```bash
+python src/python/chunk_documents.py --all --chunk-size 250 --overlap 40
+```
+
+Generate chunks for one manifest document with `--document-id`, or retain the direct-file interface when experimenting:
 
 ```bash
 python src/python/chunk_documents.py \
@@ -113,7 +128,7 @@ python src/python/chunk_documents.py \
   --overlap 40
 ```
 
-The resulting human-readable JSON is stored in `data/chunks/nvidia_2025_chunks.json`. Change `--chunk-size` and `--overlap` to experiment with other valid values; overlap must be smaller than the chunk size.
+Chunk JSON files are stored under `data/chunks/`. Change `--chunk-size` and `--overlap` to experiment with other valid values; overlap must be smaller than the chunk size.
 
 ## Disclaimer
 
