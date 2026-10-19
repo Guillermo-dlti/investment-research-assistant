@@ -5,6 +5,21 @@ project(investment_research_assistant_cpp LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+find_package(Python 3.11 COMPONENTS Interpreter Development.Module REQUIRED)
+execute_process(
+    COMMAND "${Python_EXECUTABLE}" -m pybind11 --cmakedir
+    OUTPUT_VARIABLE PYBIND11_CMAKE_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    RESULT_VARIABLE PYBIND11_CMAKE_RESULT
+)
+if(NOT PYBIND11_CMAKE_RESULT EQUAL 0)
+    message(FATAL_ERROR
+        "pybind11 is unavailable for ${Python_EXECUTABLE}; install requirements.txt in .venv"
+    )
+endif()
+find_package(pybind11 CONFIG REQUIRED PATHS "${PYBIND11_CMAKE_DIR}" NO_DEFAULT_PATH)
 
 add_library(json_support src/cpp/json_reader.cpp)
 target_include_directories(json_support PUBLIC src/cpp)
@@ -31,6 +46,15 @@ target_link_libraries(trie_demo PRIVATE trie_core)
 
 add_executable(inverted_index_demo src/cpp/inverted_index_demo.cpp)
 target_link_libraries(inverted_index_demo PRIVATE inverted_index_core)
+
+pybind11_add_module(investment_engine MODULE src/cpp/python_bindings.cpp)
+target_link_libraries(investment_engine PRIVATE trie_core inverted_index_core)
+set_target_properties(
+    investment_engine
+    PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/python"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/python"
+)
 
 enable_testing()
 add_executable(trie_tests src/cpp/tests/trie_tests.cpp)

@@ -33,9 +33,9 @@ Financial reports will be collected and converted into clean text. The text will
 
 ## Current Status
 
-**Stage 2 — Text Preprocessing and Indexing: Step 11 complete**
+**Stage 2 — Text Preprocessing and Indexing: Step 12 complete**
 
-The ten selected SEC filings have been downloaded, extracted, chunked, consolidated, and preprocessed. The C++17 Trie and chunk-level inverted index can now load and query the generated data. Matching and similarity algorithms, Python/C++ integration, AI integration, and the user interface have not yet been implemented.
+The ten selected SEC filings have been downloaded, extracted, chunked, consolidated, and preprocessed. The C++17 Trie and chunk-level inverted index can now be used directly from Python through pybind11. Additional matching and similarity algorithms, AI integration, and the user interface have not yet been implemented.
 
 ## Development Setup
 
@@ -213,6 +213,40 @@ ctest --test-dir build --output-on-failure
 ```
 
 The reusable collection loader reads only the preprocessed fields needed by the index: `chunk_id`, `tokens`, `document_id`, `ticker`, and `fiscal_year`. It shares the standard-library JSON reader with the vocabulary loader and validates collection counts, token counts, required metadata, and unique chunk IDs. Eleven inverted-index tests use synthetic data and remain portable. One additional integration test is registered when the ignored preprocessed collection exists at CMake configuration time.
+
+## Python/C++ Integration
+
+The `investment_engine` extension exposes the existing C++ Trie and inverted index through pybind11; it does not reimplement their algorithms in Python. The binding provides `Trie`, `InvertedIndex`, ranked result objects, and C++ factory functions for loading the generated vocabulary and preprocessed collection. `src/python/search_engine.py` is a thin convenience layer that reuses the Step 9 `normalize_text()` and `tokenize()` functions for queries and attaches the metadata already stored by the C++ index.
+
+Activate `.venv`, then configure CMake with that exact interpreter and build:
+
+```bash
+source .venv/bin/activate
+cmake -S . -B build \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DPython_EXECUTABLE="$PWD/.venv/bin/python"
+cmake --build build --parallel
+```
+
+The compiled module is written to `build/python/`. Add that directory to `PYTHONPATH` when importing it from the repository root:
+
+```bash
+PYTHONPATH=build/python python -c \
+  "import investment_engine; print(investment_engine.__doc__)"
+
+PYTHONPATH=build/python python -m src.python.search_demo
+```
+
+Run all C++ and Python tests after building the extension:
+
+```bash
+ctest --test-dir build --output-on-failure
+PYTHONPATH=build/python python -m pytest tests -q
+```
+
+Direct binding calls expect normalized tokens. The `SearchEngine` wrapper accepts ordinary user query strings and applies the existing Python preprocessing rules before calling C++. Autocomplete normalizes case, Unicode punctuation, and whitespace but intentionally keeps the supplied text as a prefix instead of tokenizing it as a complete term.
+
+The build discovers pybind11 through the selected Python interpreter using `python -m pybind11 --cmakedir`; no system-wide installation or hardcoded package path is used. Python 3.14.7, pybind11 3.1.0, CMake 4.4.4, and Apple Clang 21 were verified. Python/UTF-8 string conversion and conversion of vectors, dictionaries, and ranked results add boundary overhead proportional to the transferred input and output sizes, but do not change the underlying algorithms' theoretical complexity.
 
 ## Disclaimer
 

@@ -13,6 +13,7 @@ This directory contains custom C++17 data structures for the normalized financia
 - `inverted_index_demo.cpp`: indexes the real preprocessed collection and demonstrates retrieval and ranking.
 - `tests/inverted_index_tests.cpp`: eleven portable tests and one local real-collection integration test.
 - `json_reader.h` and `json_reader.cpp`: the shared standard-library-only JSON reader used by both loaders.
+- `python_bindings.cpp`: pybind11 definitions for the existing Trie, inverted index, metadata, rankings, and C++ file loaders.
 
 No external Trie or JSON library is used. Nodes own their children with `std::unique_ptr`, and each node uses `std::map<unsigned char, ...>` so traversal is deterministic and bytewise lexicographic.
 
@@ -25,6 +26,7 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel
 ./build/trie_demo data/metadata/vocabulary.json
 ./build/inverted_index_demo data/processed/preprocessed_collection.json
+PYTHONPATH=build/python python -m src.python.search_demo
 ctest --test-dir build --output-on-failure
 ```
 
@@ -52,4 +54,29 @@ The inverted index uses `token -> {chunk_id -> term_frequency}`. The outer token
 
 For `q` unique query terms, let `df_i` be each term's postings length, `P = sum(df_i)`, `M` the number of matched chunks, and `C` the total chunks. Under average hash-table behavior, a copied single-token lookup costs `O(df)`; AND costs `O(q log q + P)` after ordering lists by size; the sequential OR merges cost up to `O(qC)` in the worst case. Ranking costs `O(Mq log C + M log M)` with ordered postings lookups and final score sorting. Index memory is `O(C + V + P_total)`, where `V` is indexed vocabulary size and `P_total` is the total number of distinct token/chunk pairs.
 
-Raw term-frequency ranking sums occurrences of unique query terms. It can overvalue repetition and overlapping chunks and does not normalize for chunk length or token rarity. The index holds the complete collection in memory. KMP, Z-function, approximate matching, n-grams, Jaccard similarity, pybind11 integration, and benchmarks remain future work.
+Raw term-frequency ranking sums occurrences of unique query terms. It can overvalue repetition and overlapping chunks and does not normalize for chunk length or token rarity. The index holds the complete collection in memory. KMP, Z-function, approximate matching, n-grams, Jaccard similarity, and benchmarks remain future work.
+
+## Python Extension
+
+CMake uses the selected Python interpreter to locate pybind11 and writes the `investment_engine` extension to `build/python/`. To guarantee that configuration uses the project environment, pass the interpreter explicitly:
+
+```bash
+cmake -S . -B build \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DPython_EXECUTABLE="$PWD/.venv/bin/python"
+cmake --build build --parallel
+PYTHONPATH=build/python .venv/bin/python -c "import investment_engine"
+```
+
+The module exposes:
+
+- `Trie`: `insert`, `search`, `starts_with`, `autocomplete`, and `size`.
+- `InvertedIndex`: `add_chunk`, `lookup`, `and_query`, `or_query`, term/document frequency, ranked AND/OR, metadata, chunk count, and vocabulary size.
+- `RankedChunk`: read-only `chunk_id` and `score` fields.
+- `load_trie(path)` and `load_inverted_index(path)`: factories backed by the existing C++ JSON loaders.
+
+Python strings are encoded as UTF-8 by pybind11 and remain subject to the C++ components' byte-oriented behavior. Direct calls must provide tokens normalized by Step 9. The Python `SearchEngine` wrapper reuses the existing preprocessing functions when accepting raw query text.
+
+Interop converts Python strings and token lists into C++ values and copies C++ result vectors back into Python objects. For input size `I` and returned data size `O`, this adds approximately `O(I + O)` conversion work and corresponding temporary allocations. It does not change Trie lookup, postings intersection/union, or ranking complexity. Fine-grained calls can incur noticeable fixed interpreter-boundary overhead even when the C++ operation is small.
+
+The extension has no stable binary compatibility across unrelated Python versions; rebuild it with the exact interpreter that will import it. The verified environment used Python 3.14.7 with pybind11 3.1.0 and Apple Clang 21. No KMP, Z-function, approximate matching, AI integration, or frontend is part of the module.

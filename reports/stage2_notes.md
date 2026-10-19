@@ -177,4 +177,53 @@ Ranking evaluates `q` term frequencies for each of `M` matches and sorts the res
 
 Step 11 adds eleven portable synthetic CTests and one local real-collection integration CTest. Together with the twelve existing Trie tests, all **24 of 24 C++ tests passed**. All **45 Python tests passed** unchanged.
 
-The index is entirely in memory, OR union is sequential rather than a heap-based multiway merge, and ranking uses only raw frequency. It does not store token positions, so it cannot answer phrase or proximity queries. No KMP, Z-function, Levenshtein distance, n-gram/Jaccard similarity, BM25, TF-IDF, semantic retrieval, pybind11 integration, or user interface was added.
+The index is entirely in memory, OR union is sequential rather than a heap-based multiway merge, and ranking uses only raw frequency. It does not store token positions, so it cannot answer phrase or proximity queries. Step 11 did not add KMP, Z-function, Levenshtein distance, n-gram/Jaccard similarity, BM25, TF-IDF, semantic retrieval, pybind11 integration, or a user interface.
+
+## Step 12: Python/C++ Integration with pybind11
+
+### Binding Design
+
+The compiled module is named `investment_engine`. Its pybind11 definitions call the existing C++ `Trie` and `InvertedIndex` methods directly. The bindings expose Python-friendly snake-case names without changing the C++ implementations:
+
+- Trie insertion, exact search, prefix search, autocomplete, and size.
+- Chunk insertion, postings lookup, AND/OR queries, term frequency, document frequency, chunk count, vocabulary size, metadata, and ranked AND/OR queries.
+- Read-only ranked results containing `chunk_id` and `score`.
+- `load_trie(path)` and `load_inverted_index(path)` factory functions backed by the existing C++ vocabulary and collection loaders.
+
+The factory functions ensure real file parsing and data-structure construction remain in C++. Python does not recreate the Trie, postings lists, Boolean operations, or scoring formula.
+
+The thin `SearchEngine` wrapper loads both structures through those factories, normalizes user queries with the Step 9 `normalize_text()` and `tokenize()` functions, and converts stored C++ metadata into result dictionaries. Complete query terms are tokenized. Autocomplete applies the existing Unicode, case, punctuation, and whitespace normalization but does not force an incomplete prefix through complete-token extraction.
+
+### Build and Compatibility
+
+CMake's selected Python interpreter runs `python -m pybind11 --cmakedir`, avoiding hardcoded package locations and system-wide installation. The module is emitted under `build/python/` and imported by adding that directory to `PYTHONPATH`.
+
+The verified toolchain was:
+
+- Python 3.14.7 from `.venv`.
+- pybind11 3.1.0 from `.venv`.
+- CMake 4.4.4 from `.venv`.
+- Apple Clang 21.0.0.
+
+The first binding build revealed that returning `Trie` by value made pybind11 attempt to copy its `unique_ptr`-owned node tree. The file factory was changed to return `std::unique_ptr<Trie>` instead. This binding-only ownership correction preserves the existing RAII Trie and does not change any algorithm.
+
+Python extension modules are tied to their Python ABI, so `investment_engine` must be rebuilt when the importing Python version or architecture changes. The module built and imported successfully under Python 3.14; no Python-version workaround was required.
+
+### Real-Data Verification
+
+Python loaded **14,180 Trie tokens** and **2,458 indexed chunks** through the C++ loaders. Results matched the standalone C++ demonstration:
+
+- `revenue`: 521 chunks.
+- `artificial AND intelligence`: 30 chunks.
+- `nvidia OR amd`: 354 chunks.
+- Top ranked AND result: `GOOGL_2025_10K_0067`, score 4.
+- Top ranked OR result: `AMD_2025_10K_0027`, score 18.
+- Autocomplete for `nv`: `nvda`, `nvestment`, `nveu`, `nvidia`, `nvidia's`, `nvidia-accelerated`, `nvidia-based`, `nvl` for a limit of eight.
+
+All **24 C++ tests** continued to pass. Twelve Python binding and integration tests were added, bringing the Python total to **57 passing tests**. The tests cover module import, both bound structures, UTF-8 and financial punctuation, deterministic ranking, invalid inputs, shared normalization, and the complete local collection.
+
+### Interoperability Cost and Limitations
+
+pybind11 does not change the theoretical complexity of Trie traversal, index construction, Boolean postings operations, or ranking. Crossing the language boundary has a fixed call cost and converts Python UTF-8 strings and lists into C++ values. Returning results copies C++ vectors and strings into Python objects. For total transferred input size `I` and output size `O`, conversion adds approximately `O(I + O)` time and temporary memory proportional to converted data.
+
+Loading remains in-memory, result collections are copied, and many very small cross-language calls can spend proportionally more time in binding overhead. Query inputs passed directly to `investment_engine` must already be normalized; raw user text should go through `SearchEngine`. The bindings add no KMP, Z-function, Levenshtein distance, n-gram/Jaccard similarity, TF-IDF, BM25, AI integration, or frontend.
