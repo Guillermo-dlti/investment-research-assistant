@@ -2,7 +2,7 @@
 
 ## Scope
 
-Stage 5 closes the loop the brief describes: question → search → retrieved chunks → context selection → language model → answer. Retrieval is the approximate search from Stage 4 (exact search can be chosen instead). The selection algorithm is new and written from scratch in C++17. The language model is a pretrained Hugging Face model used without any training. The design is recorded in spec 0004. The full output for 21 questions is in `reports/stage5_results.md`, with the raw data in `reports/stage5_results.json`.
+Stage 5 closes the loop the brief describes: question → search → retrieved chunks → context selection → language model → answer. Retrieval is the approximate search from Stage 4 (exact search can be chosen instead). The selection algorithm is new and written from scratch in C++17. The language model is a pretrained Hugging Face model used without any training. The full output for 21 questions is in `reports/stage5_results.md`, with the raw data in `reports/stage5_results.json`.
 
 ## Context selection
 

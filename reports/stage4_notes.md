@@ -2,7 +2,7 @@
 
 ## Scope
 
-Stage 4 adds a second way to search the 2,458 chunks, next to the exact search from Stages 2 and 3. Exact search only finds chunks that contain the words of the question as typed. Approximate search also tolerates typos and word variations, and it computes relevance again with two approximate techniques: Levenshtein edit distance and Jaccard similarity over word n grams. The design is recorded in spec 0003. Both techniques and the reranker are written from scratch in C++17 and called from Python through pybind11. Exact search and every Stage 1 to 3 interface are unchanged.
+Stage 4 adds a second way to search the 2,458 chunks, next to the exact search from Stages 2 and 3. Exact search only finds chunks that contain the words of the question as typed. Approximate search also tolerates typos and word variations, and it computes relevance again with two approximate techniques: Levenshtein edit distance and Jaccard similarity over word n grams. Both techniques and the reranker are written from scratch in C++17 and called from Python through pybind11. Exact search and every Stage 1 to 3 interface are unchanged.
 
 ## Algorithms
 
